@@ -14,6 +14,10 @@ describe("SpacetimeDB record encoding", () => {
     expect(decodeRole({ "0": [] })).toBe("user");
     expect(decodeRole({ "1": [] })).toBe("admin");
     expect(() => decodeRole({ "2": [] })).toThrow("Invalid role");
+    // Live SQL responses use the [tag, payload] form.
+    expect(decodeRole([0, []])).toBe("user");
+    expect(decodeRole([1, []])).toBe("admin");
+    expect(() => decodeRole([2, []])).toThrow("Invalid role");
   });
   it("decodes microsecond timestamps", () => {
     expect(decodeTimestamp([1000000n])).toBe("1970-01-01T00:00:01.000Z");

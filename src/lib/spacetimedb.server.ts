@@ -1,4 +1,4 @@
-import { SPACETIMEDB_URL, decodeRole, decodeSqlRows, decodeTimestamp, decodeUuid, textField } from "./spacetimedb-wire";
+import { SPACETIMEDB_URL, encodeProvision, decodeRole, decodeSqlRows, decodeTimestamp, decodeUuid, textField } from "./spacetimedb-wire";
 
 type Schema = {
   tables?: { name: string; table_access?: { Private?: unknown } }[];
@@ -46,6 +46,21 @@ export async function readBreakouts(token: string) {
     id: decodeUuid(row[0]), startTime: decodeTimestamp(row[1]), status: textField(row[2]),
     system: textField(row[3]), description: textField(row[4]),
   }));
+}
+
+/** Ensure the signed-in account has a person row; new members always start as "user". */
+export async function ensurePerson(token: string, userId: string, name: string, email: string) {
+  try {
+    return await getVerifiedPeople(token, userId);
+  } catch (err) {
+    if (!(err instanceof Error) || !err.message.includes("not been migrated")) throw err;
+  }
+  const response = await fetch(`${SPACETIMEDB_URL}/call/provision_person`, {
+    method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: encodeProvision(userId, name, email), signal: AbortSignal.timeout(10000),
+  });
+  if (!response.ok) throw new Error("Your account could not be added to the workspace.");
+  return getVerifiedPeople(token, userId);
 }
 
 export async function callRoleChange(token: string, body: string) {

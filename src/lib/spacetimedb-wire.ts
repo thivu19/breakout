@@ -36,6 +36,13 @@ export function decodeTimestamp(value: unknown): string {
 }
 
 export function decodeRole(value: unknown): SpacetimeRole {
+  // SQL responses encode enums as [tag, payload].
+  if (Array.isArray(value) && value.length === 2) {
+    const tag = Number(value[0]);
+    if (tag === 0) return "user";
+    if (tag === 1) return "admin";
+    throw new Error("Invalid role.");
+  }
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Invalid role.");
   const keys = Object.keys(value);
   if (keys.length !== 1) throw new Error("Invalid role.");
@@ -52,6 +59,20 @@ export function encodeRoleChange(actorId: string, targetId: string, role: Spacet
   ]);
   if (!encoded) throw new Error("Cannot encode role change.");
   return encoded;
+}
+
+/** provision_person always enrols as "user"; admin is only granted by an existing admin. */
+export function encodeProvision(userId: string, name: string, email: string): string {
+  const encoded = stringify([[Uuid.parse(userId).asBigInt()], name, email, { "0": [] }]);
+  if (!encoded) throw new Error("Cannot encode member.");
+  return encoded;
+}
+
+/** Breakouts copied from the old database keep their reference as "INC-1042 · Title". */
+export function splitDescription(description: string, id: string): { ref: string; title: string } {
+  const match = /^(INC-\d+) · (.+)$/.exec(description);
+  if (match) return { ref: match[1]!, title: match[2]! };
+  return { ref: `BRK-${id.slice(0, 4).toUpperCase()}`, title: description };
 }
 
 export function textField(value: unknown): string {
