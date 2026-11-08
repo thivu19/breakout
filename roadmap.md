@@ -1,8 +1,8 @@
 # SpacetimeDB replacement
 
-- [x] Save the replacement owner token through secure project secrets.
-- [ ] Deploy the protected module without deleting existing records: blocked because SpacetimeDB rejects the replacement token with HTTP 401.
-- [x] Verify the published three-table module: reachable, but tables are public and reducers are unrestricted.
-- [x] Prepare a private three-table module, protected role editing, staged authenticated adapter, and precision-safe record decoding without deleting Cloud data.
-- [ ] Activate simplified screens and migrate records: blocked on the owner publishing the protected external module and replacing the saved token (SpacetimeDB rejected it with HTTP 401); existing account UUIDs and trusted roles must be reconciled first.
-- [ ] Verify signed-in reads and administrator role editing against SpacetimeDB: blocked on secure external activation.
+- [x] Save a valid owner token through secure project secrets (accepted by SpacetimeDB).
+- [x] Deploy the protected module without deleting records: all three tables now private; outsiders cannot read or write; existing rows preserved (1 person, 1 breakout, 0 documents).
+- [x] Prepare private three-table module, protected role editing, staged authenticated adapter, precision-safe decoding.
+- [ ] Reconcile accounts: map each signed-in account to a `person` row with a trusted role (admin from the existing roles store, everyone else `user`). Needs the user's go-ahead because it writes to SpacetimeDB.
+- [ ] Switch command center and team screens to SpacetimeDB (two roles, no audit history, simplified incident fields).
+- [ ] Verify signed-in reads and admin role editing against SpacetimeDB.

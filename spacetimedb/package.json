@@ -2,5 +2,10 @@
   "name": "breakout-database",
   "private": true,
   "type": "module",
-  "dependencies": { "spacetimedb": "2.14.1" }
+  "dependencies": {
+    "spacetimedb": "2.14.1"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
 }
