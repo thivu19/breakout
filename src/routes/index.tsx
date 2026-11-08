@@ -1,87 +1,80 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { useState, type FormEvent } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ArrowRight, ArrowUpRight, Mail, ShieldPlus } from "lucide-react";
+import { AuthLayout } from "@/components/breakout/auth-layout";
+import { CheckBox, Field, OrDivider, PasswordField, SecureNote, SsoButton } from "@/components/breakout/form-fields";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Breakout — Get started" },
-      {
-        name: "description",
-        content: "Breakout starter page with links to templates, learning resources, and docs.",
-      },
-      { property: "og:title", content: "Breakout — Get started" },
-      {
-        property: "og:description",
-        content: "Breakout starter page with links to templates, learning resources, and docs.",
-      },
+      { title: "Create your workspace — Breakout" },
+      { name: "description", content: "Set up a Breakout workspace and bring your incident response team into one command center." },
+      { property: "og:title", content: "Create your workspace — Breakout" },
+      { property: "og:description", content: "Set up a Breakout workspace and bring your incident response team into one command center." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: Home,
+  component: SignUp,
 });
 
-function Home() {
+function SignUp() {
+  const navigate = useNavigate();
+  const [agreed, setAgreed] = useState(true);
+
+  const onSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    navigate({ to: "/command-center" });
+  };
+
   return (
-    <div className="flex flex-1 flex-col items-center justify-center bg-surface font-sans">
-      <main className="flex w-full max-w-3xl flex-1 flex-col items-center justify-between bg-card px-16 py-32 sm:items-start">
-        <img
-          className="logo-adaptive h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          fetchPriority="high"
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-heading">
-            To get started, edit the{" "}
-            <code className="rounded bg-code px-1.5 py-0.5 font-mono text-[0.9em]">page.tsx</code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-muted-foreground">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-link"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-link"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <AuthLayout
+      headline={<>When every second counts, take control.</>}
+      topRight={
+        <>
+          Already have a workspace?{" "}
+          <Link to="/login" className="ml-1 inline-flex items-center gap-1.5 font-semibold text-primary hover:underline">
+            Log in <ArrowUpRight className="size-4" />
+          </Link>
+        </>
+      }
+    >
+      <p className="eyebrow flex items-center gap-2 text-muted-foreground">
+        <ShieldPlus className="size-4 text-primary" />
+        Establish your workspace
+      </p>
+      <h2 className="mt-3 text-4xl font-normal tracking-tight text-foreground">Build your response team.</h2>
+      <p className="mt-3 text-muted-foreground">Create your account. Bring clarity to your next incident.</p>
+
+      <form onSubmit={onSubmit} className="mt-7">
+        <SsoButton />
+        <OrDivider />
+        <div className="space-y-5">
+          <Field label="Full name" name="name" placeholder="Alex Morgan" autoComplete="name" required />
+          <Field label="Work email" name="email" type="email" placeholder="alex@acme.com" autoComplete="email" icon={<Mail />} required />
+          <Field label="Workspace name" name="workspace" placeholder="Acme Security" required />
+          <PasswordField
+            label="Password"
+            name="password"
+            autoComplete="new-password"
+            placeholder="••••••••••••••"
+            minLength={12}
+            hint="Use 12+ characters, including a number and a symbol."
+            required
+          />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-5 text-primary-foreground transition-colors hover:bg-primary-hover md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <img
-              className="logo-adaptive h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-hairline px-5 transition-colors hover:border-transparent hover:bg-ghost-hover md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="mt-5">
+          <CheckBox checked={agreed} onChange={setAgreed}>
+            I agree to the Terms of Service and Privacy Policy.
+          </CheckBox>
         </div>
-      </main>
-    </div>
+        <Button type="submit" variant="signal" size="xl" className="mt-6 w-full" disabled={!agreed}>
+          <ArrowRight />
+          Create workspace
+        </Button>
+      </form>
+      <SecureNote>Encrypted by default. Controlled by you.</SecureNote>
+    </AuthLayout>
   );
 }
