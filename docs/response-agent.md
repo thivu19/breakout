@@ -10,6 +10,8 @@ Open the robot beside an incident. An administrator uses **Index documents** to 
 
 ## Provider configuration
 
+Incident reviews use temperature `0.7` to allow variation during testing; document summaries stay at `0`. Variation alone does not prove retrieval or model calls succeeded, and identical answers remain possible.
+
 Configure server-side values securely, never in browser code or a committed environment file:
 
 - `NVIDIA_API_KEY`: rotated NVIDIA API credential, securely saved.

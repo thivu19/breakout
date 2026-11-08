@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { runAgent, indexDocument, agentConfig } from "../lib/ai/agent.server.js";
 import { sourceHash } from "../lib/ai/weaviate.server.js";
 import { parsePlan, toolTemplates } from "../lib/ai/tools.js";
+import { reasonAboutIncident, summarizeDocument } from "../lib/ai/nemotron.server.js";
 
 const config = agentConfig({ NVIDIA_API_KEY: "test-credential", WEAVIATE_URL: "https://weaviate.example.test", WEAVIATE_API_KEY: "test-credential" });
 const docs = [
@@ -13,6 +14,18 @@ const response = (body: unknown, status = 200) => new Response(JSON.stringify(bo
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Nemotron retrieval agent", () => {
+  it("uses temperature 0.7 for incident reviews", async () => {
+    const fetcher = vi.fn().mockResolvedValue(response({ choices: [{ message: { content: JSON.stringify({ analysis: "Review evidence", actions: [] }) } }] }));
+    vi.stubGlobal("fetch", fetcher);
+    await reasonAboutIncident(incident, docs, "Investigate", config);
+    expect(JSON.parse(fetcher.mock.calls[0]?.[1].body).temperature).toBe(0.7);
+  });
+  it("keeps document summaries deterministic at temperature 0", async () => {
+    const fetcher = vi.fn().mockResolvedValue(response({ choices: [{ message: { content: "Evidence summary" } }] }));
+    vi.stubGlobal("fetch", fetcher);
+    await summarizeDocument(docs[0], config);
+    expect(JSON.parse(fetcher.mock.calls[0]?.[1].body).temperature).toBe(0);
+  });
   it("requests exactly two Weaviate references and passes full SpacetimeDB documents to Nemotron", async () => {
     const refs = await Promise.all(docs.map(async doc => ({ properties: { documentId: doc.id, sourceHash: await sourceHash(doc) } })));
     const fetcher = vi.fn().mockResolvedValueOnce(response({ data: [{ embedding: [0.1, 0.2] }] }))
