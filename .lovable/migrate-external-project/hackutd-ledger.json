@@ -1,0 +1,15 @@
+{
+  "source": "HackUTD2026.zip",
+  "stack": "Python FastAPI, OpenAI-compatible Ollama, Weaviate derived index",
+  "capabilities": [
+    {"capability":"code", "source":"Agent/agent.py and actions.yaml", "outcome":"Convert workflow and action catalog to JavaScript", "status":"in_progress", "next_action":"Implement authenticated dashboard agent"},
+    {"capability":"database", "source":"Rag/rag.py references missing spacetime.py", "outcome":"Preserve existing private three-table SpacetimeDB as explicitly requested", "status":"in_progress", "next_action":"Read incident and document context through authenticated bridge"},
+    {"capability":"records and auth identities", "source":"No exports attached", "outcome":"Preserve current application records and Cloud sign-in; no replacement or credential import", "status":"preserved", "next_action":null},
+    {"capability":"AI provider", "source":"Local Ollama qwen3:8b", "outcome":"Temporary Ollama adapter, future NVIDIA Nemotron API", "status":"pending", "next_action":"Supply a reachable secured Ollama endpoint; local localhost service is not reachable from published app"},
+    {"capability":"remote action execution", "source":"NODE_BACKEND_URL/tools/*", "outcome":"Preserve action definitions and prerequisite/approval requirements; do not execute destructive tools without trusted service", "status":"blocked", "next_action":"Attach missing tool-backend implementation and configure authenticated execution service"},
+    {"capability":"vector search", "source":"Rag/rag.py Weaviate and Ollama embeddings", "outcome":"Preserve as pending; use explicitly labelled text matching over current SpacetimeDB documents for preview", "status":"blocked", "next_action":"Provide Weaviate endpoint and embedding service; missing spacetime.py and legal content prevent equivalent indexing"},
+    {"capability":"public endpoints and schedules", "source":"/health, /reindex, /ws and 30-second startup poll", "outcome":"Use authenticated app functions and visible-dashboard polling; do not expose unauthenticated controls", "status":"pending", "next_action":"Original external callers and deployment URLs not supplied; cutover remains unverified"},
+    {"capability":"secrets", "source":"Archived .env", "outcome":"Excluded, never imported", "status":"preserved", "next_action":"Configure user-owned services securely when available"},
+    {"capability":"verification", "source":"Dashboard", "outcome":"Unit tests and signed-in browser check", "status":"in_progress", "next_action":"Verify placeholder against real incident context; live providers remain pending"}
+  ]
+}
