@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CommandCenterRouteImport } from './routes/command-center'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as TeamRouteImport } from './routes/team'
+import { Route as IncidentsIncidentIdContainmentRouteImport } from './routes/incidents.$incidentId.containment'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +35,26 @@ const TeamRoute = TeamRouteImport.update({
   path: '/team',
   getParentRoute: () => rootRouteImport,
 } as any)
+const IncidentsIncidentIdContainmentRoute =
+  IncidentsIncidentIdContainmentRouteImport.update({
+    id: '/incidents/$incidentId/containment',
+    path: '/incidents/$incidentId/containment',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/command-center': typeof CommandCenterRoute
   '/login': typeof LoginRoute
   '/team': typeof TeamRoute
+  '/incidents/$incidentId/containment': typeof IncidentsIncidentIdContainmentRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/command-center': typeof CommandCenterRoute
   '/login': typeof LoginRoute
   '/team': typeof TeamRoute
+  '/incidents/$incidentId/containment': typeof IncidentsIncidentIdContainmentRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +62,30 @@ export interface FileRoutesById {
   '/command-center': typeof CommandCenterRoute
   '/login': typeof LoginRoute
   '/team': typeof TeamRoute
+  '/incidents/$incidentId/containment': typeof IncidentsIncidentIdContainmentRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/command-center' | '/login' | '/team'
+  fullPaths:
+    | '/'
+    | '/command-center'
+    | '/login'
+    | '/team'
+    | '/incidents/$incidentId/containment'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/command-center' | '/login' | '/team'
-  id: '__root__' | '/' | '/command-center' | '/login' | '/team'
+  to:
+    | '/'
+    | '/command-center'
+    | '/login'
+    | '/team'
+    | '/incidents/$incidentId/containment'
+  id:
+    | '__root__'
+    | '/'
+    | '/command-center'
+    | '/login'
+    | '/team'
+    | '/incidents/$incidentId/containment'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +93,7 @@ export interface RootRouteChildren {
   CommandCenterRoute: typeof CommandCenterRoute
   LoginRoute: typeof LoginRoute
   TeamRoute: typeof TeamRoute
+  IncidentsIncidentIdContainmentRoute: typeof IncidentsIncidentIdContainmentRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +126,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TeamRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/incidents/$incidentId/containment': {
+      id: '/incidents/$incidentId/containment'
+      path: '/incidents/$incidentId/containment'
+      fullPath: '/incidents/$incidentId/containment'
+      preLoaderRoute: typeof IncidentsIncidentIdContainmentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +141,7 @@ const rootRouteChildren: RootRouteChildren = {
   CommandCenterRoute: CommandCenterRoute,
   LoginRoute: LoginRoute,
   TeamRoute: TeamRoute,
+  IncidentsIncidentIdContainmentRoute: IncidentsIncidentIdContainmentRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
