@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getIncidentAdvice, getAgentDocumentManifest, indexAgentDocument, reconcileAgentIndex } from "@/lib/spacetimedb.functions";
 import { actions } from "@/lib/response-agent.js";
+import { ManualRunner, RunActionButton, isRunnerTool } from "./remediation-runner";
 
 type Incident = { key: string; ref: string; title: string; system: string };
 type Advice = Awaited<ReturnType<typeof getIncidentAdvice>>;
@@ -58,7 +59,7 @@ export function ResponseAgentDialog({ incident, onClose }: { incident: Incident 
         </DialogHeader>
         <div className="flex flex-wrap items-center justify-between gap-2 border-y border-border py-3 text-xs">
           <span className="font-mono text-primary">NVIDIA NEMOTRON · NANO</span>
-          <span className="flex items-center gap-1.5 text-muted-foreground"><ShieldCheck className="size-3.5" /> Advisory only · No commands sent</span>
+          <span className="flex items-center gap-1.5 text-muted-foreground"><ShieldCheck className="size-3.5" /> Admin approval required to run</span>
         </div>
         <form onSubmit={submit} className="space-y-3">
           <label htmlFor="agent-question" className="text-sm font-medium">Investigation question</label>
@@ -76,10 +77,11 @@ export function ResponseAgentDialog({ incident, onClose }: { incident: Incident 
             <h3 className="text-sm font-medium">Proposed actions · {advice.proposals.length}</h3>
             {advice.proposals.length === 0 && <p className="mt-2 text-sm text-muted-foreground">No tool calls proposed.</p>}
             <ul className="mt-2 divide-y divide-border">{advice.proposals.map((proposal, index) => <li key={`${proposal.tool}-${index}`} className="py-3">
-              <p className="flex flex-wrap justify-between gap-2 font-mono text-xs"><span>{proposal.tool}</span><span className="text-muted-foreground">TODO · Not executed</span></p>
+              <p className="flex flex-wrap justify-between gap-2 font-mono text-xs"><span>{proposal.tool}</span><span className="text-muted-foreground">{isRunnerTool(proposal.tool) ? "Awaiting approval" : "Read-only"}</span></p>
               <p className="mt-1 break-words text-sm">{proposal.reason}</p>
               <pre className="mt-2 whitespace-pre-wrap break-all font-mono text-xs text-muted-foreground">{JSON.stringify(proposal.arguments, null, 2)}</pre>
               <p className="mt-1 text-xs text-muted-foreground">{proposal.approval === "required" ? "Human approval required" : "Read / verify"}{proposal.requires.length > 0 ? ` · After ${proposal.requires.join(", ")}` : ""}</p>
+              {isRunnerTool(proposal.tool) && <RunActionButton tool={proposal.tool} args={proposal.arguments as Record<string, unknown>} />}
             </li>)}</ul>
           </div>
           <div className="mt-4 border-t border-border pt-3">
@@ -89,8 +91,9 @@ export function ResponseAgentDialog({ incident, onClose }: { incident: Incident 
             <p className="mt-1 break-all font-mono text-xs text-subtle">{advice.model}</p>
           </div>
         </section>}
+        <ManualRunner />
         <details className="border-t border-border pt-3 text-sm">
-          <summary className="cursor-pointer font-medium text-muted-foreground">Response actions · Execution unavailable</summary>
+          <summary className="cursor-pointer font-medium text-muted-foreground">Response actions catalog</summary>
           <ul className="mt-3 divide-y divide-border">{Object.entries(actions).map(([name, action]) => <li key={name} className="py-2">
             <div className="flex flex-wrap justify-between gap-2"><span className="font-mono text-xs">{name}</span><span className="text-xs text-muted-foreground">{action.approval === "required" ? "Human approval required" : "Read / verify"}</span></div>
             <p className="mt-1 text-xs text-muted-foreground">{action.description}{action.requires.length > 0 && ` After: ${action.requires.join(", ")}.`}</p>
