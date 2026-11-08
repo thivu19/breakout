@@ -8,17 +8,18 @@
 
 # HackUTD JavaScript agent
 
-- [ ] Add isolated JavaScript AI modules for Nemotron summaries, Weaviate indexing/top-two retrieval, and SpacetimeDB document hydration.
-- [ ] Add five non-executing tool templates and structured Nemotron action proposals.
-- [ ] Request missing secure NVIDIA and Weaviate settings, test retrieval boundaries, and verify the signed-in workflow.
+- [x] Add isolated JavaScript AI modules for Nemotron summaries, Weaviate indexing/top-two retrieval, and SpacetimeDB document hydration.
+- [x] Add five non-executing tool templates and structured Nemotron action proposals.
+- [x] Request missing secure NVIDIA and Weaviate settings, test retrieval boundaries, and verify the signed-in workflow.
 
 - [x] Convert the action catalog and grounded response workflow to JavaScript.
 - [x] Wire incident and document context to authenticated SpacetimeDB reads; add visible-dashboard polling.
-- [x] Add an incident-response dialog with an explicitly labelled Ollama placeholder and future Nemotron adapter.
+- [x] Replace the Ollama placeholder with verified live Nemotron Nano Omni advice and document-index controls.
 - [x] Test action prerequisites and provider boundaries.
-- [ ] Verify the signed-in dashboard/dialog on desktop and mobile (blocked: remote module currently has public tables and lacks protected reducers; safety gate correctly rejects it).
-- [ ] Verify live model calls and remote remediation (requires reachable Ollama service and missing tool backend).
-- [ ] Restore equivalent vector indexing and external endpoint/caller cutover (requires Weaviate/embedding service, missing source data and caller details).
+- [x] Verify the restored protected module and signed-in dashboard/dialog on desktop and mobile.
+- [x] Index three real workspace playbooks, retrieve two references, hydrate SpacetimeDB sources and display live Nemotron tool proposals.
+- [ ] Implement remote remediation after the user supplies the tool backend and durable approval requirements (deliberately TODO).
+- [ ] External endpoint/caller cutover remains blocked by missing caller details; no public endpoints added.
 
 # Preview error recovery
 
