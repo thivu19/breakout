@@ -2,18 +2,96 @@
   "source": "code-archive",
   "source_stack": "Next.js 16 (App Router) create-next-app starter, Tailwind v4, Geist fonts",
   "capabilities": [
-    { "capability": "code", "source": "app/page.tsx, app/layout.tsx, app/globals.css", "outcome": "migrate", "status": "pending", "next_action": "Recreate / route, root layout metadata, Geist fonts and light/dark theme in TanStack Start" },
-    { "capability": "assets", "source": "public/next.svg, public/vercel.svg, app/favicon.ico", "outcome": "migrate", "status": "pending", "next_action": "Copy SVG logos and favicon into public/" },
-    { "capability": "schema", "source": "none detected", "outcome": "not-applicable", "status": "verified", "next_action": "none" },
-    { "capability": "records", "source": "none detected", "outcome": "not-applicable", "status": "verified", "next_action": "none" },
-    { "capability": "auth identities", "source": "none detected", "outcome": "not-applicable", "status": "verified", "next_action": "none" },
-    { "capability": "authorization", "source": "none detected", "outcome": "not-applicable", "status": "verified", "next_action": "none" },
-    { "capability": "uploaded file bytes", "source": "none detected", "outcome": "not-applicable", "status": "verified", "next_action": "none" },
-    { "capability": "external providers", "source": "outbound links only (vercel.com, nextjs.org)", "outcome": "preserve", "status": "pending", "next_action": "Keep the same outbound links" },
-    { "capability": "public endpoints / callbacks / webhooks", "source": "none detected", "outcome": "not-applicable", "status": "verified", "next_action": "none" },
-    { "capability": "schedules", "source": "none detected", "outcome": "not-applicable", "status": "verified", "next_action": "none" },
-    { "capability": "secrets", "source": "no environment variables referenced", "outcome": "not-applicable", "status": "verified", "next_action": "none" },
-    { "capability": "cutover", "source": "Vercel hosting (implied)", "outcome": "user-action", "status": "pending", "next_action": "Publish in Lovable; optionally move the domain later" },
-    { "capability": "verification", "source": "-", "outcome": "verify", "status": "pending", "next_action": "Render / in browser, light and dark, run routing test" }
+    {
+      "capability": "code",
+      "source": "app/page.tsx, app/layout.tsx, app/globals.css",
+      "outcome": "migrate",
+      "status": "verified",
+      "next_action": "none"
+    },
+    {
+      "capability": "assets",
+      "source": "public/next.svg, public/vercel.svg, app/favicon.ico",
+      "outcome": "migrate",
+      "status": "verified",
+      "next_action": "none"
+    },
+    {
+      "capability": "schema",
+      "source": "none detected",
+      "outcome": "not-applicable",
+      "status": "verified",
+      "next_action": "none"
+    },
+    {
+      "capability": "records",
+      "source": "none detected",
+      "outcome": "not-applicable",
+      "status": "verified",
+      "next_action": "none"
+    },
+    {
+      "capability": "auth identities",
+      "source": "none detected",
+      "outcome": "not-applicable",
+      "status": "verified",
+      "next_action": "none"
+    },
+    {
+      "capability": "authorization",
+      "source": "none detected",
+      "outcome": "not-applicable",
+      "status": "verified",
+      "next_action": "none"
+    },
+    {
+      "capability": "uploaded file bytes",
+      "source": "none detected",
+      "outcome": "not-applicable",
+      "status": "verified",
+      "next_action": "none"
+    },
+    {
+      "capability": "external providers",
+      "source": "outbound links only (vercel.com, nextjs.org)",
+      "outcome": "preserve",
+      "status": "verified",
+      "next_action": "none"
+    },
+    {
+      "capability": "public endpoints / callbacks / webhooks",
+      "source": "none detected",
+      "outcome": "not-applicable",
+      "status": "verified",
+      "next_action": "none"
+    },
+    {
+      "capability": "schedules",
+      "source": "none detected",
+      "outcome": "not-applicable",
+      "status": "verified",
+      "next_action": "none"
+    },
+    {
+      "capability": "secrets",
+      "source": "no environment variables referenced",
+      "outcome": "not-applicable",
+      "status": "verified",
+      "next_action": "none"
+    },
+    {
+      "capability": "cutover",
+      "source": "Vercel hosting (implied)",
+      "outcome": "user-action",
+      "status": "accepted",
+      "next_action": "Publish from Lovable when ready"
+    },
+    {
+      "capability": "verification",
+      "source": "-",
+      "outcome": "verify",
+      "status": "verified",
+      "next_action": "none"
+    }
   ]
 }
