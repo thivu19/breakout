@@ -72,8 +72,8 @@ function NavItem({
 function CurrentUser() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { data: me } = useQuery(spacetimeMeQuery);
-  const profile = me ? { name: me.name, role: me.role === "admin" ? "Administrator" : "User" } : null;
+  const { data: me, isError } = useQuery({ ...spacetimeMeQuery, retry: false });
+  const profile = !isError && me ? { name: me.name, role: me.role === "admin" ? "Administrator" : "User" } : null;
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -81,7 +81,7 @@ function CurrentUser() {
     navigate({ to: "/login" });
   };
 
-  const name = profile?.name ?? "…";
+  const name = profile?.name ?? (isError ? "Account unavailable" : "…");
   const init = name
     .split(" ")
     .map((p) => p[0])
@@ -96,7 +96,7 @@ function CurrentUser() {
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm text-foreground">{name}</span>
-        <span className="block text-xs text-muted-foreground">{profile?.role ?? "…"}</span>
+        <span className="block text-xs text-muted-foreground">{profile?.role ?? (isError ? "Connection blocked" : "…")}</span>
       </span>
       <button
         type="button"

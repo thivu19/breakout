@@ -37,3 +37,4 @@ use the editor.
 - Shared screen chrome (sidebar, top bar, auth split layout) lives in `src/components/breakout/`; new app pages wrap their content in `AppShell`.
 - The uploaded response-agent action catalog and provider adapter are native JavaScript modules in `src/lib/response-agent*`; authenticated functions resolve incident/document context from SpacetimeDB, and advice never executes remediation commands because the source tool backend is absent.
 - Dashboard incident reads poll only while visible through TanStack Query; no persistent background loop or claim of native SpacetimeDB streaming is made.
+- Authenticated route failures render shared workspace chrome and a recoverable connection boundary; keep protection checks fail-closed and never substitute empty records or cached roles after a failed verification.
