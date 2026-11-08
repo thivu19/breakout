@@ -89,6 +89,39 @@ export const getIncidentAdvice = createServerFn({ method: "POST" })
     return { ...result, incidentId: incident.id, generatedAt: new Date().toISOString() };
   });
 
+const RUNNER_TOOLS = ["isolate_website", "quarantine_files", "kill_process", "restore_backup_snapshot", "verify_system"] as const;
+const runnerArgs = {
+  isolate_website: z.object({ target: z.string().min(1).max(200) }).strict(),
+  quarantine_files: z.object({ paths: z.array(z.string().min(1).max(500)).min(1).max(100) }).strict(),
+  kill_process: z.object({ pid: z.number().int().positive() }).strict(),
+  restore_backup_snapshot: z.object({ target: z.string().min(1).max(200) }).strict(),
+  verify_system: z.object({ target: z.string().min(1).max(200) }).strict(),
+};
+
+/** Admin-approved dispatch of one remediation action to the host-side Docker runner. */
+export const executeRemediation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ tool: z.enum(RUNNER_TOOLS), arguments: z.record(z.string(), z.unknown()) }))
+  .handler(async ({ context, data }) => {
+    const { currentUser } = await currentMember(context);
+    if (currentUser.role !== "admin") throw new Error("Only administrators can approve and run remediation actions.");
+    const args = runnerArgs[data.tool].safeParse(data.arguments);
+    if (!args.success) throw new Error("Invalid arguments for this action. Nothing was sent.");
+    const url = process.env["REMEDIATION_RUNNER_URL"]?.trim().replace(/\/$/, "");
+    const token = process.env["REMEDIATION_RUNNER_TOKEN"]?.trim();
+    if (!url || !token || !url.startsWith("https://")) throw new Error("The remediation runner is not configured.");
+    const res = await fetch(`${url}/execute`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Token": token },
+      body: JSON.stringify({ action: data.tool, target: "infected-client", parameters: args.data }),
+      signal: AbortSignal.timeout(30000),
+    }).catch(() => null);
+    if (!res) throw new Error("The remediation runner did not respond. Check the Docker host and tunnel.");
+    const body = (await res.json().catch(() => ({}))) as { status?: string; stdout?: string; stderr?: string; detail?: unknown };
+    if (!res.ok) throw new Error(`Runner rejected the action (${res.status}).`);
+    return { tool: data.tool, status: body.status ?? "unknown", stdout: String(body.stdout ?? ""), stderr: String(body.stderr ?? ""), ranAt: new Date().toISOString() };
+  });
+
 export const getAgentDocumentManifest = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
