@@ -1,0 +1,3 @@
+export const toolTemplates: Record<string, { execute: () => Promise<never> }>;
+export const toolCatalog: { name: string; description: string; execution: string; available: boolean; approval: string; requires: string[] }[];
+export function parsePlan(text: string): { text: string; proposals: { tool: string; arguments: Record<string, string | number | string[]>; reason: string; approval: string; requires: string[]; execution: string }[] };

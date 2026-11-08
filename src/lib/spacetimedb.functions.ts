@@ -80,19 +80,45 @@ export const getIncidentAdvice = createServerFn({ method: "POST" })
     const { readBreakouts, readAgentDocuments } = await import("./spacetimedb.server");
     const incident = (await readBreakouts(token)).find(row => row.id === data.incidentId);
     if (!incident) throw new Error("Incident not found in this workspace.");
-    const { matchDocuments } = await import("./response-agent.js");
-    const documents = matchDocuments(await readAgentDocuments(token), `${incident.description} ${data.question}`);
-    const { generateResponse } = await import("./response-agent.server.js");
-    const result = await generateResponse({
-      incident, documents, question: data.question,
-      config: {
-        endpoint: process.env["RESPONSE_AI_BASE_URL"]?.trim(),
-        provider: process.env["RESPONSE_AI_PROVIDER"] === "nemotron" ? "nemotron" : "ollama",
-        model: process.env["RESPONSE_AI_MODEL"]?.trim(),
-        apiKey: process.env["RESPONSE_AI_API_KEY"]?.trim(),
-      },
+    const { runAgent, agentConfig } = await import("./ai/agent.server.js");
+    const result = await runAgent({
+      incident, question: data.question, config: agentConfig(process.env),
+      // Hydrate the selected IDs from the authoritative private database, never from summaries.
+      loadDocuments: async ids => ids.length ? (await readAgentDocuments(token)).filter(doc => ids.includes(doc.id)) : [],
     });
-    return { ...result, incidentId: incident.id, documents: documents.map(({ id, title, category }) => ({ id, title, category })), generatedAt: new Date().toISOString(), execution: "disabled" as const };
+    return { ...result, incidentId: incident.id, generatedAt: new Date().toISOString() };
+  });
+
+export const getAgentDocumentManifest = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { token, currentUser } = await currentMember(context);
+    const { readAgentDocuments } = await import("./spacetimedb.server");
+    const documents = await readAgentDocuments(token);
+    return { canIndex: currentUser.role === "admin", documents: documents.map(({ id, title, category }) => ({ id, title, category })) };
+  });
+
+export const indexAgentDocument = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ documentId: z.string().uuid() }))
+  .handler(async ({ context, data }) => {
+    const { token, currentUser } = await currentMember(context);
+    if (currentUser.role !== "admin") throw new Error("Only administrators can index workspace documents.");
+    const { readAgentDocuments } = await import("./spacetimedb.server");
+    const document = (await readAgentDocuments(token)).find(doc => doc.id === data.documentId);
+    if (!document) throw new Error("Document not found in SpacetimeDB.");
+    const { indexDocument, agentConfig } = await import("./ai/agent.server.js");
+    return indexDocument(document, agentConfig(process.env));
+  });
+
+export const reconcileAgentIndex = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { token, currentUser } = await currentMember(context);
+    if (currentUser.role !== "admin") throw new Error("Only administrators can reconcile the document index.");
+    const { readAgentDocuments } = await import("./spacetimedb.server");
+    const { reconcileIndex, agentConfig } = await import("./ai/agent.server.js");
+    return reconcileIndex((await readAgentDocuments(token)).map(doc => doc.id), agentConfig(process.env));
   });
 
 export const spacetimeMeQuery = queryOptions({ queryKey: ["stdb", "me"], queryFn: () => getSpacetimeMe() });
