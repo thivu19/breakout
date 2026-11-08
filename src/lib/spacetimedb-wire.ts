@@ -61,6 +61,20 @@ export function encodeRoleChange(actorId: string, targetId: string, role: Spacet
   return encoded;
 }
 
+/** provision_person always enrols as "user"; admin is only granted by an existing admin. */
+export function encodeProvision(userId: string, name: string, email: string): string {
+  const encoded = stringify([[Uuid.parse(userId).asBigInt()], name, email, { "0": [] }]);
+  if (!encoded) throw new Error("Cannot encode member.");
+  return encoded;
+}
+
+/** Breakouts copied from the old database keep their reference as "INC-1042 · Title". */
+export function splitDescription(description: string, id: string): { ref: string; title: string } {
+  const match = /^(INC-\d+) · (.+)$/.exec(description);
+  if (match) return { ref: match[1]!, title: match[2]! };
+  return { ref: `BRK-${id.slice(0, 4).toUpperCase()}`, title: description };
+}
+
 export function textField(value: unknown): string {
   if (typeof value !== "string") throw new Error("Invalid database text field.");
   return value;
