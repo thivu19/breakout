@@ -15,3 +15,9 @@
 - [ ] Verify the signed-in dashboard/dialog on desktop and mobile (blocked: remote module currently has public tables and lacks protected reducers; safety gate correctly rejects it).
 - [ ] Verify live model calls and remote remediation (requires reachable Ollama service and missing tool backend).
 - [ ] Restore equivalent vector indexing and external endpoint/caller cutover (requires Weaviate/embedding service, missing source data and caller details).
+
+# Preview error recovery
+
+- [x] Handle blocked SpacetimeDB reads with shared workspace navigation, a safe connection message and working retry.
+- [x] Verify the Radix dialog opens and closes on a fresh browser load; the reported hook error came from a stale optimized dependency graph.
+- [x] Test retry behavior and check the signed-in connection screen.
