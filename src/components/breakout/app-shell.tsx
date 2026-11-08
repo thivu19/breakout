@@ -1,13 +1,13 @@
-import type { ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
+import { useEffect, useState, type ReactNode } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   Bell,
   ChartNoAxesColumn,
-  ChevronDown,
   ChevronsUpDown,
   CircleHelp,
   Database,
   LayoutGrid,
+  LogOut,
   Plug,
   ScanSearch,
   Search,
@@ -17,6 +17,8 @@ import {
   Workflow,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { roleDisplay, type AppRole } from "@/lib/breakout.functions";
 import { Logo } from "./logo";
 
 type NavKey = "command-center" | "team";
