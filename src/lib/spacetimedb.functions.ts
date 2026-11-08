@@ -72,9 +72,34 @@ export const updateSpacetimeRole = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const getIncidentAdvice = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ incidentId: z.string().uuid(), question: z.string().trim().min(1).max(2000) }))
+  .handler(async ({ context, data }) => {
+    const { token } = await currentMember(context);
+    const { readBreakouts, readAgentDocuments } = await import("./spacetimedb.server");
+    const incident = (await readBreakouts(token)).find(row => row.id === data.incidentId);
+    if (!incident) throw new Error("Incident not found in this workspace.");
+    const { matchDocuments } = await import("./response-agent.js");
+    const documents = matchDocuments(await readAgentDocuments(token), `${incident.description} ${data.question}`);
+    const { generateResponse } = await import("./response-agent.server.js");
+    const result = await generateResponse({
+      incident, documents, question: data.question,
+      config: {
+        endpoint: process.env["RESPONSE_AI_BASE_URL"]?.trim(),
+        provider: process.env["RESPONSE_AI_PROVIDER"] === "nemotron" ? "nemotron" : "ollama",
+        model: process.env["RESPONSE_AI_MODEL"]?.trim(),
+        apiKey: process.env["RESPONSE_AI_API_KEY"]?.trim(),
+      },
+    });
+    return { ...result, incidentId: incident.id, documents: documents.map(({ id, title, category }) => ({ id, title, category })), generatedAt: new Date().toISOString(), execution: "disabled" as const };
+  });
+
 export const spacetimeMeQuery = queryOptions({ queryKey: ["stdb", "me"], queryFn: () => getSpacetimeMe() });
 export const spacetimeTeamQuery = queryOptions({ queryKey: ["stdb", "team"], queryFn: () => getSpacetimeTeam() });
 export const spacetimeBreakoutsQuery = queryOptions({
   queryKey: ["stdb", "breakouts"],
   queryFn: () => getSpacetimeBreakouts(),
+  refetchInterval: 10000,
+  refetchOnWindowFocus: true,
 });
