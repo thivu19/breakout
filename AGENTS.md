@@ -28,3 +28,7 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Project rules
+
+- Light/dark theme follows the visitor's system setting via `@media (prefers-color-scheme: dark)` in `src/styles.css` (ported from the original Next.js app); do not switch to a class-based toggle without being asked.
