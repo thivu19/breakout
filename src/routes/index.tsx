@@ -63,9 +63,8 @@ function Home() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            {/* Black logomark on a light pill in dark mode, white in light mode: invert opposite to page logos. */}
             <img
-              className="h-[14px] w-4 invert-[calc(1-var(--logo-invert))]"
+              className="logo-adaptive h-[14px] w-4"
               src="/vercel.svg"
               alt="Vercel logomark"
               width={16}
