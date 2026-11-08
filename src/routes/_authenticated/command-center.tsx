@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { ArrowRight, ArrowUpRight, CalendarDays, ChevronDown, Clock, ListFilter, Plus } from "lucide-react";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { ArrowRight, ArrowUpRight, Bot, CalendarDays, ChevronDown, Clock, ListFilter, Plus, RefreshCw } from "lucide-react";
+import { ResponseAgentDialog } from "@/components/breakout/response-agent-dialog";
 import { AppShell, Avatar, CountChip, Panel } from "@/components/breakout/app-shell";
 import { Sparkline, StatusDot, statusDot } from "@/components/breakout/badges";
 import { Button } from "@/components/ui/button";
@@ -46,8 +47,10 @@ function formatAge(startTime: string): string {
 }
 
 function CommandCenter() {
-  const { data } = useSuspenseQuery(spacetimeBreakoutsQuery);
+  const { data, dataUpdatedAt, isFetching } = useSuspenseQuery(spacetimeBreakoutsQuery);
+  const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState("All statuses");
+  const [agentIncident, setAgentIncident] = useState<{ key: string; ref: string; title: string; system: string } | null>(null);
 
   const incidents = useMemo(
     () =>
@@ -164,6 +167,10 @@ function CommandCenter() {
                     </td>
                     <td className="px-3 py-4 font-mono text-sm text-muted-foreground tabular">{inc.age}</td>
                     <td className="pr-6">
+                      <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="icon" title={`Review ${inc.ref} with response adviser`} aria-label={`Review ${inc.ref} with response adviser`} onClick={() => setAgentIncident(inc)}>
+                        <Bot className="size-4 text-primary" />
+                      </Button>
                       {reviewable ? (
                         <Link
                           to="/incidents/$incidentId/containment"
@@ -176,6 +183,7 @@ function CommandCenter() {
                       ) : (
                         <ArrowUpRight className="size-4 text-subtle" />
                       )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -193,8 +201,12 @@ function CommandCenter() {
         <div className="flex items-center justify-between border-t border-border px-6 py-4">
           <span className="eyebrow flex items-center gap-2 text-[0.65rem] text-subtle">
             <span className="size-1.5 rounded-full bg-success" />
-            Live from workspace database
+            SpacetimeDB · 10s refresh
+            <span className="hidden sm:inline">· {new Date(dataUpdatedAt).toISOString().slice(11, 19)} UTC</span>
           </span>
+          <Button variant="ghost" size="icon" title="Refresh incidents" aria-label="Refresh incidents" disabled={isFetching} onClick={() => void queryClient.invalidateQueries({ queryKey: ["stdb", "breakouts"] })}>
+            <RefreshCw className={cn("size-4", isFetching && "animate-spin")} />
+          </Button>
           <span className="flex items-center gap-2 text-sm font-medium text-primary">
             View all incidents <ArrowRight className="size-4" />
           </span>
@@ -281,6 +293,7 @@ function CommandCenter() {
           </Link>
         </Panel>
       </div>
+      <ResponseAgentDialog key={agentIncident?.key ?? "closed"} incident={agentIncident} onClose={() => setAgentIncident(null)} />
     </AppShell>
   );
 }

@@ -48,6 +48,19 @@ export async function readBreakouts(token: string) {
   }));
 }
 
+export async function readAgentDocuments(token: string) {
+  const categories = ["Legal", "CompanyPolicy", "Playbook", "Journal"];
+  return (await readRows(token, "documents")).map(row => {
+    const categoryValue = row[2];
+    const tag = Array.isArray(categoryValue) ? Number(categoryValue[0]) :
+      categoryValue && typeof categoryValue === "object" ? Object.keys(categoryValue)[0] : undefined;
+    const category = typeof tag === "number" || (typeof tag === "string" && /^\d+$/.test(tag))
+      ? categories[Number(tag)] : tag;
+    if (!category || !categories.includes(category)) throw new Error("Invalid document category.");
+    return { id: decodeUuid(row[0]), title: textField(row[1]), category, content: textField(row[3]) };
+  });
+}
+
 /** Ensure the signed-in account has a person row; new members always start as "user". */
 export async function ensurePerson(token: string, userId: string, name: string, email: string) {
   try {

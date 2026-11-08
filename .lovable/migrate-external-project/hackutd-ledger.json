@@ -1,0 +1,15 @@
+{
+  "source": "HackUTD2026.zip",
+  "stack": "Python FastAPI, OpenAI-compatible Ollama, Weaviate derived index",
+  "capabilities": [
+    {"capability":"code", "source":"Agent/agent.py and actions.yaml", "outcome":"JavaScript action catalog, advisory provider adapter and dashboard dialog implemented; no destructive execution", "status":"implemented", "next_action":"Live UI verification awaits protected SpacetimeDB module"},
+    {"capability":"database", "source":"Rag/rag.py references missing spacetime.py", "outcome":"Authenticated incident/document bridge wired, existing source of truth preserved", "status":"blocked", "next_action":"Remote schema check returned three Public tables and only original unguarded reducers; republish protected module before activation"},
+    {"capability":"records and auth identities", "source":"No exports attached", "outcome":"Preserve current application records and Cloud sign-in; no replacement or credential import", "status":"preserved", "next_action":null},
+    {"capability":"AI provider", "source":"Local Ollama qwen3:8b", "outcome":"Temporary Ollama adapter, future NVIDIA Nemotron API", "status":"pending", "next_action":"Supply a reachable secured Ollama endpoint; local localhost service is not reachable from published app"},
+    {"capability":"remote action execution", "source":"NODE_BACKEND_URL/tools/*", "outcome":"Preserve action definitions and prerequisite/approval requirements; do not execute destructive tools without trusted service", "status":"blocked", "next_action":"Attach missing tool-backend implementation and configure authenticated execution service"},
+    {"capability":"vector search", "source":"Rag/rag.py Weaviate and Ollama embeddings", "outcome":"Preserve as pending; use explicitly labelled text matching over current SpacetimeDB documents for preview", "status":"blocked", "next_action":"Provide Weaviate endpoint and embedding service; missing spacetime.py and legal content prevent equivalent indexing"},
+    {"capability":"public endpoints and schedules", "source":"/health, /reindex, /ws and 30-second startup poll", "outcome":"Use authenticated app functions and visible-dashboard polling; do not expose unauthenticated controls", "status":"pending", "next_action":"Original external callers and deployment URLs not supplied; cutover remains unverified"},
+    {"capability":"secrets", "source":"Archived .env", "outcome":"Excluded, never imported", "status":"preserved", "next_action":"Configure user-owned services securely when available"},
+    {"capability":"verification", "source":"Dashboard", "outcome":"Action tests pass; signed-in browser reaches existing safety error because remote protection checks fail; build OK", "status":"blocked", "next_action":"Republish protected module, then verify desktop/mobile adviser against real context; live providers remain pending"}
+  ]
+}
