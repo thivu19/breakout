@@ -6,5 +6,5 @@ export function reconcileIndex(ids: string[], config: AgentConfig): Promise<{ re
 export function runAgent(input: { incident: AgentIncident; question: string; loadDocuments: (ids: string[]) => Promise<AgentDocument[]>; config: AgentConfig }): Promise<{
   provider: string; model: string; text: string; documents: { id: string; title: string; category: string }[];
   retrieval: string; execution: string;
-  proposals: { tool: string; arguments: Record<string, unknown>; reason: string; approval: string; requires: string[]; execution: string }[];
+  proposals: { tool: string; arguments: Record<string, string | number | string[]>; reason: string; approval: string; requires: string[]; execution: string }[];
 }>;
