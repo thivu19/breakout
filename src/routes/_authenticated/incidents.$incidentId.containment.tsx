@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { containment, incidents } from "@/lib/breakout-data";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/incidents/$incidentId/containment")({
+export const Route = createFileRoute("/_authenticated/incidents/$incidentId/containment")({
   loader: ({ params }) => {
     const incident = incidents.find((i) => i.id === params.incidentId);
     if (!incident || incident.id !== containment.incidentId) throw notFound();

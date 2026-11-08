@@ -10,19 +10,19 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as CommandCenterRouteImport } from './routes/command-center'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as TeamRouteImport } from './routes/team'
-import { Route as IncidentsIncidentIdContainmentRouteImport } from './routes/incidents.$incidentId.containment'
+import { Route as AuthenticatedCommandCenterRouteImport } from './routes/_authenticated/command-center'
+import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
+import { Route as AuthenticatedIncidentsIncidentIdContainmentRouteImport } from './routes/_authenticated/incidents.$incidentId.containment'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CommandCenterRoute = CommandCenterRouteImport.update({
-  id: '/command-center',
-  path: '/command-center',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -30,70 +30,76 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TeamRoute = TeamRouteImport.update({
+const AuthenticatedCommandCenterRoute =
+  AuthenticatedCommandCenterRouteImport.update({
+    id: '/command-center',
+    path: '/command-center',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedTeamRoute = AuthenticatedTeamRouteImport.update({
   id: '/team',
   path: '/team',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const IncidentsIncidentIdContainmentRoute =
-  IncidentsIncidentIdContainmentRouteImport.update({
+const AuthenticatedIncidentsIncidentIdContainmentRoute =
+  AuthenticatedIncidentsIncidentIdContainmentRouteImport.update({
     id: '/incidents/$incidentId/containment',
     path: '/incidents/$incidentId/containment',
-    getParentRoute: () => rootRouteImport,
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/command-center': typeof CommandCenterRoute
   '/login': typeof LoginRoute
-  '/team': typeof TeamRoute
-  '/incidents/$incidentId/containment': typeof IncidentsIncidentIdContainmentRoute
+  '/command-center': typeof AuthenticatedCommandCenterRoute
+  '/team': typeof AuthenticatedTeamRoute
+  '/incidents/$incidentId/containment': typeof AuthenticatedIncidentsIncidentIdContainmentRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/command-center': typeof CommandCenterRoute
   '/login': typeof LoginRoute
-  '/team': typeof TeamRoute
-  '/incidents/$incidentId/containment': typeof IncidentsIncidentIdContainmentRoute
+  '/command-center': typeof AuthenticatedCommandCenterRoute
+  '/team': typeof AuthenticatedTeamRoute
+  '/incidents/$incidentId/containment': typeof AuthenticatedIncidentsIncidentIdContainmentRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/command-center': typeof CommandCenterRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/login': typeof LoginRoute
-  '/team': typeof TeamRoute
-  '/incidents/$incidentId/containment': typeof IncidentsIncidentIdContainmentRoute
+  '/_authenticated/command-center': typeof AuthenticatedCommandCenterRoute
+  '/_authenticated/team': typeof AuthenticatedTeamRoute
+  '/_authenticated/incidents/$incidentId/containment': typeof AuthenticatedIncidentsIncidentIdContainmentRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/command-center'
     | '/login'
+    | '/command-center'
     | '/team'
     | '/incidents/$incidentId/containment'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/command-center'
     | '/login'
+    | '/command-center'
     | '/team'
     | '/incidents/$incidentId/containment'
   id:
     | '__root__'
     | '/'
-    | '/command-center'
+    | '/_authenticated'
     | '/login'
-    | '/team'
-    | '/incidents/$incidentId/containment'
+    | '/_authenticated/command-center'
+    | '/_authenticated/team'
+    | '/_authenticated/incidents/$incidentId/containment'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  CommandCenterRoute: typeof CommandCenterRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   LoginRoute: typeof LoginRoute
-  TeamRoute: typeof TeamRoute
-  IncidentsIncidentIdContainmentRoute: typeof IncidentsIncidentIdContainmentRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -105,11 +111,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/command-center': {
-      id: '/command-center'
-      path: '/command-center'
-      fullPath: '/command-center'
-      preLoaderRoute: typeof CommandCenterRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -119,29 +125,50 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/team': {
-      id: '/team'
+    '/_authenticated/command-center': {
+      id: '/_authenticated/command-center'
+      path: '/command-center'
+      fullPath: '/command-center'
+      preLoaderRoute: typeof AuthenticatedCommandCenterRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/team': {
+      id: '/_authenticated/team'
       path: '/team'
       fullPath: '/team'
-      preLoaderRoute: typeof TeamRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedTeamRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/incidents/$incidentId/containment': {
-      id: '/incidents/$incidentId/containment'
+    '/_authenticated/incidents/$incidentId/containment': {
+      id: '/_authenticated/incidents/$incidentId/containment'
       path: '/incidents/$incidentId/containment'
       fullPath: '/incidents/$incidentId/containment'
-      preLoaderRoute: typeof IncidentsIncidentIdContainmentRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedIncidentsIncidentIdContainmentRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedCommandCenterRoute: typeof AuthenticatedCommandCenterRoute
+  AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
+  AuthenticatedIncidentsIncidentIdContainmentRoute: typeof AuthenticatedIncidentsIncidentIdContainmentRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedCommandCenterRoute: AuthenticatedCommandCenterRoute,
+  AuthenticatedTeamRoute: AuthenticatedTeamRoute,
+  AuthenticatedIncidentsIncidentIdContainmentRoute:
+    AuthenticatedIncidentsIncidentIdContainmentRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  CommandCenterRoute: CommandCenterRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   LoginRoute: LoginRoute,
-  TeamRoute: TeamRoute,
-  IncidentsIncidentIdContainmentRoute: IncidentsIncidentIdContainmentRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

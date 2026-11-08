@@ -1,13 +1,13 @@
-import type { ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
+import { useEffect, useState, type ReactNode } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   Bell,
   ChartNoAxesColumn,
-  ChevronDown,
   ChevronsUpDown,
   CircleHelp,
   Database,
   LayoutGrid,
+  LogOut,
   Plug,
   ScanSearch,
   Search,
@@ -17,6 +17,8 @@ import {
   Workflow,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { roleDisplay, type AppRole } from "@/lib/breakout.functions";
 import { Logo } from "./logo";
 
 type NavKey = "command-center" | "team";
@@ -63,6 +65,65 @@ function NavItem({
     <span className={cn(navItemClass, "cursor-default")} title="Coming soon">
       {content}
     </span>
+  );
+}
+
+function CurrentUser() {
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState<{ name: string; role: string } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!data.user || cancelled) return;
+      const [{ data: p }, { data: r }] = await Promise.all([
+        supabase.from("profiles").select("name").eq("id", data.user.id).maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", data.user.id).maybeSingle(),
+      ]);
+      if (cancelled) return;
+      setProfile({
+        name: p?.name ?? data.user.email ?? "Operator",
+        role: roleDisplay[(r?.role ?? "observer") as AppRole],
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/login" });
+  };
+
+  const name = profile?.name ?? "…";
+  const init = name
+    .split(" ")
+    .map((p) => p[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  return (
+    <div className="mt-3 flex items-center gap-3 border-t border-sidebar-border px-1 pt-4">
+      <span className="flex size-9 items-center justify-center rounded-md bg-secondary font-mono text-xs text-info">
+        {init}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm text-foreground">{name}</span>
+        <span className="block text-xs text-muted-foreground">{profile?.role ?? "…"}</span>
+      </span>
+      <button
+        type="button"
+        onClick={signOut}
+        aria-label="Sign out"
+        title="Sign out"
+        className="text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <LogOut className="size-4" />
+      </button>
+    </div>
   );
 }
 
@@ -113,16 +174,7 @@ function Sidebar({ active }: { active: NavKey }) {
           <CircleHelp className="size-[18px] text-subtle" />
           Help & documentation
         </span>
-        <div className="mt-3 flex items-center gap-3 border-t border-sidebar-border px-1 pt-4">
-          <span className="flex size-9 items-center justify-center rounded-md bg-secondary font-mono text-xs text-info">
-            AM
-          </span>
-          <span className="flex-1">
-            <span className="block text-sm text-foreground">Alex Morgan</span>
-            <span className="block text-xs text-muted-foreground">Incident commander</span>
-          </span>
-          <ChevronDown className="size-4 text-subtle" />
-        </div>
+        <CurrentUser />
       </div>
     </aside>
   );

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -15,10 +16,13 @@ import {
 import { AppShell, Avatar, CountChip, Panel } from "@/components/breakout/app-shell";
 import { SeverityBadge, Sparkline, StatusDot, statusDot } from "@/components/breakout/badges";
 import { Button } from "@/components/ui/button";
-import { activity, incidents, kpis, type ResponseStatus } from "@/lib/breakout-data";
+import { kpis, type ResponseStatus, type Severity } from "@/lib/breakout-data";
+import { commandCenterQuery } from "@/lib/breakout.functions";
+import type { Json } from "@/integrations/supabase/types";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/command-center")({
+export const Route = createFileRoute("/_authenticated/command-center")({
+  loader: ({ context }) => context.queryClient.ensureQueryData(commandCenterQuery),
   head: () => ({
     meta: [
       { title: "Command center — Breakout" },
@@ -32,6 +36,33 @@ export const Route = createFileRoute("/command-center")({
   component: CommandCenter,
 });
 
+const severityMap: Record<string, Severity> = { critical: 1, high: 2, medium: 3, low: 3 };
+const statusMap: Record<string, ResponseStatus> = {
+  detected: "Triage",
+  triaged: "Investigating",
+  contained: "Containing",
+  eradicated: "Monitoring",
+  recovered: "Monitoring",
+  closed: "Monitoring",
+};
+
+function formatAge(createdAt: string): string {
+  const mins = Math.max(1, Math.round((Date.now() - new Date(createdAt).getTime()) / 60000));
+  if (mins < 60) return `${mins}m`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h < 24) return `${h}h ${String(m).padStart(2, "0")}m`;
+  return `${Math.floor(h / 24)}d ${h % 24}h`;
+}
+
+type AuditEvent = {
+  id: number;
+  actor_name: string | null;
+  action: string;
+  detail: Json;
+  created_at: string;
+};
+
 const activityIcon = {
   shield: <ShieldCheck className="size-4 text-muted-foreground" />,
   approval: <ShieldAlert className="size-4 text-warning" />,
@@ -39,14 +70,68 @@ const activityIcon = {
   monitor: <Eye className="size-4 text-muted-foreground" />,
 };
 
+function describeEvent(e: AuditEvent): { kind: keyof typeof activityIcon; title: string; meta: string } {
+  const d = (e.detail ?? {}) as {
+    incident?: string;
+    identities?: number;
+    endpoints?: number;
+    note?: string;
+    user_name?: string;
+    role?: string;
+  };
+  const who = e.actor_name ?? "System";
+  switch (e.action) {
+    case "account.sessions_revoked":
+      return { kind: "shield", title: "Account sessions revoked", meta: `${who} · ${d.incident} · ${d.identities} identity` };
+    case "containment.approval_requested":
+      return { kind: "approval", title: "Containment approval requested", meta: `${who} · ${d.incident} · ${d.endpoints} endpoints` };
+    case "incident.resolved":
+      return { kind: "resolved", title: String(d.note ?? "Incident resolved"), meta: `${who} · ${d.incident} · Resolved` };
+    case "incident.monitoring":
+      return { kind: "monitor", title: "Moved to monitoring", meta: `${who} · ${d.incident} · ${d.note}` };
+    case "user.role":
+      return { kind: "shield", title: "Member role changed", meta: `${who} · ${String(d.user_name ?? "")} → ${String(d.role ?? "")}` };
+    default:
+      return { kind: "monitor", title: e.action, meta: who };
+  }
+}
+
 function CommandCenter() {
+  const { data } = useSuspenseQuery(commandCenterQuery);
   const [owner, setOwner] = useState("All responders");
-  const owners = useMemo(() => ["All responders", ...new Set(incidents.map((i) => i.owner))], []);
+
+  const incidents = useMemo(
+    () =>
+      data.breakouts.map((b) => ({
+        id: b.ref,
+        title: b.title,
+        source: b.source,
+        severity: severityMap[b.severity] ?? 3,
+        status: statusMap[b.status] ?? "Triage",
+        owner: b.owner_name ?? "Unassigned",
+        age: formatAge(b.created_at),
+      })),
+    [data.breakouts],
+  );
+
+  const owners = useMemo(() => ["All responders", ...new Set(incidents.map((i) => i.owner))], [incidents]);
   const rows = owner === "All responders" ? incidents : incidents.filter((i) => i.owner === owner);
 
   const posture: { status: ResponseStatus; count: number }[] = (
     ["Triage", "Investigating", "Containing", "Monitoring"] as ResponseStatus[]
   ).map((status) => ({ status, count: incidents.filter((i) => i.status === status).length }));
+
+  const critical = incidents.find((i) => i.severity === 1);
+  const sevCounts = [
+    incidents.filter((i) => i.severity === 1).length,
+    incidents.filter((i) => i.severity === 2).length,
+    incidents.filter((i) => i.severity === 3).length,
+  ];
+
+  const activity = data.events.map((e) => ({
+    time: new Date(e.created_at).toISOString().slice(11, 16),
+    ...describeEvent(e),
+  }));
 
   return (
     <AppShell
@@ -73,22 +158,24 @@ function CommandCenter() {
       </div>
 
       {/* Approval alert */}
-      <div className="mt-7 flex flex-wrap items-center gap-4 rounded-lg border border-danger-border bg-danger-surface px-5 py-4">
-        <ShieldAlert className="size-5 text-danger" />
-        <div className="min-w-0 flex-1">
-          <p className="font-semibold">Containment approval required</p>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            INC-1042 · Isolate 2 additional endpoints in Finance. Requested by Sarah Chen at 09:56 UTC.
-          </p>
+      {critical && (
+        <div className="mt-7 flex flex-wrap items-center gap-4 rounded-lg border border-danger-border bg-danger-surface px-5 py-4">
+          <ShieldAlert className="size-5 text-danger" />
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold">Containment approval required</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {critical.id} · Isolate 2 additional endpoints in Finance. Requested by Sarah Chen at 09:56 UTC.
+            </p>
+          </div>
+          <span className="eyebrow text-danger">Sev 1 / Critical</span>
+          <Button variant="alert" size="lg" asChild>
+            <Link to="/incidents/$incidentId/containment" params={{ incidentId: critical.id }}>
+              <ArrowRight />
+              Review action
+            </Link>
+          </Button>
         </div>
-        <span className="eyebrow text-danger">Sev 1 / Critical</span>
-        <Button variant="alert" size="lg" asChild>
-          <Link to="/incidents/$incidentId/containment" params={{ incidentId: "INC-1042" }}>
-            <ArrowRight />
-            Review action
-          </Link>
-        </Button>
-      </div>
+      )}
 
       {/* KPIs */}
       <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -99,7 +186,9 @@ function CommandCenter() {
               <ArrowUpRight className="size-4 text-subtle" />
             </div>
             <div className="mt-2 flex items-end justify-between gap-2">
-              <p className="whitespace-nowrap text-4xl font-normal tracking-tight tabular">{k.value}</p>
+              <p className="whitespace-nowrap text-4xl font-normal tracking-tight tabular">
+                {i === 0 ? String(incidents.length) : k.value}
+              </p>
               <Sparkline points={k.trend} tone={i === 0 ? "danger" : "foreground"} />
             </div>
             <p className="mt-3 text-sm text-muted-foreground">
@@ -116,8 +205,10 @@ function CommandCenter() {
       <Panel className="mt-6 overflow-hidden">
         <div className="flex flex-wrap items-center gap-3 px-6 py-5">
           <h2 className="text-xl font-semibold">Active incidents</h2>
-          <CountChip>05</CountChip>
-          <span className="eyebrow text-subtle">1 critical / 2 high / 2 medium</span>
+          <CountChip>{String(incidents.length).padStart(2, "0")}</CountChip>
+          <span className="eyebrow text-subtle">
+            {sevCounts[0]} critical / {sevCounts[1]} high / {sevCounts[2]} medium
+          </span>
           <div className="ml-auto flex gap-3">
             <label className="relative">
               <ChevronDown className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -151,11 +242,11 @@ function CommandCenter() {
             </thead>
             <tbody>
               {rows.map((inc) => {
-                const critical = inc.severity === 1;
+                const isCritical = inc.severity === 1;
                 return (
                   <tr
                     key={inc.id}
-                    className={cn("border-b border-border last:border-0", critical ? "bg-danger-surface/60" : "hover:bg-panel")}
+                    className={cn("border-b border-border last:border-0", isCritical ? "bg-danger-surface/60" : "hover:bg-panel")}
                   >
                     <td className="px-6 py-4">
                       <SeverityBadge level={inc.severity} />
@@ -178,7 +269,7 @@ function CommandCenter() {
                     </td>
                     <td className="px-3 py-4 font-mono text-sm text-muted-foreground tabular">{inc.age}</td>
                     <td className="pr-6">
-                      {critical ? (
+                      {isCritical ? (
                         <Link
                           to="/incidents/$incidentId/containment"
                           params={{ incidentId: inc.id }}
@@ -194,6 +285,13 @@ function CommandCenter() {
                   </tr>
                 );
               })}
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-10 text-center text-muted-foreground">
+                    No active incidents. Declare one when the next signal arrives.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -216,8 +314,8 @@ function CommandCenter() {
             <span className="eyebrow text-[0.65rem] text-subtle">Today / UTC</span>
           </div>
           <ul className="mt-5 space-y-5">
-            {activity.map((a) => (
-              <li key={a.time} className="flex gap-4">
+            {activity.map((a, i) => (
+              <li key={`${a.time}-${i}`} className="flex gap-4">
                 <span className="w-10 pt-0.5 font-mono text-xs text-subtle tabular">{a.time}</span>
                 <span className="pt-0.5">{activityIcon[a.kind]}</span>
                 <div>
@@ -226,13 +324,16 @@ function CommandCenter() {
                 </div>
               </li>
             ))}
+            {activity.length === 0 && (
+              <li className="text-sm text-muted-foreground">No activity recorded yet.</li>
+            )}
           </ul>
         </Panel>
 
         <Panel className="p-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Response posture</h2>
-            <span className="eyebrow text-[0.65rem] text-subtle">5 active</span>
+            <span className="eyebrow text-[0.65rem] text-subtle">{incidents.length} active</span>
           </div>
           <div className="mt-6 flex h-2.5 gap-1">
             {posture.flatMap(({ status, count }) =>

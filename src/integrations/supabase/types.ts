@@ -14,16 +14,253 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audit_events: {
+        Row: {
+          action: string
+          actor: string | null
+          actor_name: string | null
+          created_at: string
+          detail: Json
+          id: number
+        }
+        Insert: {
+          action: string
+          actor?: string | null
+          actor_name?: string | null
+          created_at?: string
+          detail?: Json
+          id?: never
+        }
+        Update: {
+          action?: string
+          actor?: string | null
+          actor_name?: string | null
+          created_at?: string
+          detail?: Json
+          id?: never
+        }
+        Relationships: []
+      }
+      auto_runs: {
+        Row: {
+          findings: string[]
+          id: string
+          requested_by: string | null
+          stage: string
+          started_at: string
+          target: string
+        }
+        Insert: {
+          findings?: string[]
+          id?: string
+          requested_by?: string | null
+          stage?: string
+          started_at?: string
+          target: string
+        }
+        Update: {
+          findings?: string[]
+          id?: string
+          requested_by?: string | null
+          stage?: string
+          started_at?: string
+          target?: string
+        }
+        Relationships: []
+      }
+      breakouts: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          id: string
+          owner_name: string | null
+          ref: string
+          severity: string
+          source: string
+          status: Database["public"]["Enums"]["breakout_status"]
+          strategy: string
+          system: string
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          owner_name?: string | null
+          ref: string
+          severity: string
+          source?: string
+          status?: Database["public"]["Enums"]["breakout_status"]
+          strategy?: string
+          system: string
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          owner_name?: string | null
+          ref?: string
+          severity?: string
+          source?: string
+          status?: Database["public"]["Enums"]["breakout_status"]
+          strategy?: string
+          system?: string
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      documents: {
+        Row: {
+          category: Database["public"]["Enums"]["document_category"]
+          content: string
+          created_at: string
+          created_by: string | null
+          file_name: string | null
+          id: string
+          title: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["document_category"]
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          file_name?: string | null
+          id?: string
+          title: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["document_category"]
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          file_name?: string | null
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          phone: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          name: string
+          phone?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          phone?: string | null
+        }
+        Relationships: []
+      }
+      scope_items: {
+        Row: {
+          asset: string
+          breakout_id: string
+          classification: string
+          data_type: string
+          id: string
+          records: number
+          state: Database["public"]["Enums"]["data_state"]
+        }
+        Insert: {
+          asset: string
+          breakout_id: string
+          classification: string
+          data_type?: string
+          id?: string
+          records?: number
+          state: Database["public"]["Enums"]["data_state"]
+        }
+        Update: {
+          asset?: string
+          breakout_id?: string
+          classification?: string
+          data_type?: string
+          id?: string
+          records?: number
+          state?: Database["public"]["Enums"]["data_state"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scope_items_breakout_id_fkey"
+            columns: ["breakout_id"]
+            isOneToOne: false
+            referencedRelation: "breakouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role:
+        | "admin"
+        | "incident_commander"
+        | "analyst"
+        | "legal"
+        | "observer"
+      breakout_status:
+        | "detected"
+        | "triaged"
+        | "contained"
+        | "eradicated"
+        | "recovered"
+        | "closed"
+      data_state:
+        | "encrypted"
+        | "exfiltrated"
+        | "corrupted"
+        | "exposed"
+        | "suspected"
+        | "secured"
+      document_category: "Legal" | "Company Policy" | "Playbook" | "Journal"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +387,25 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "incident_commander", "analyst", "legal", "observer"],
+      breakout_status: [
+        "detected",
+        "triaged",
+        "contained",
+        "eradicated",
+        "recovered",
+        "closed",
+      ],
+      data_state: [
+        "encrypted",
+        "exfiltrated",
+        "corrupted",
+        "exposed",
+        "suspected",
+        "secured",
+      ],
+      document_category: ["Legal", "Company Policy", "Playbook", "Journal"],
+    },
   },
 } as const

@@ -1,0 +1,76 @@
+{
+  "source": "code-archive",
+  "source_stack": "FastAPI (Python) in-memory backend shell: auth+TOTP login, users/roles, breakouts, documents, scope, auto runs, WS comms",
+  "capabilities": [
+    {
+      "capability": "auth (email+password+TOTP, JWT)",
+      "source": "app/routers/auth.py, app/security.py",
+      "outcome": "migrate",
+      "status": "verified",
+      "next_action": "Email/password live on Lovable Cloud with confirmation emails; TOTP MFA pending (Supabase MFA follow-up)"
+    },
+    {
+      "capability": "users & roles (admin, incident_commander, analyst, legal, observer)",
+      "source": "app/routers/users.py, app/models.py",
+      "outcome": "migrate",
+      "status": "verified",
+      "next_action": "none — profiles + user_roles + has_role(); first user becomes admin; Team & access wired; role changes verified with audit entry"
+    },
+    {
+      "capability": "breakouts (incidents) CRUD",
+      "source": "app/routers/incidents.py",
+      "outcome": "migrate",
+      "status": "verified",
+      "next_action": "none — breakouts table + RLS; command center reads live rows; declare/update UI still to build"
+    },
+    {
+      "capability": "documents",
+      "source": "app/routers/incidents.py",
+      "outcome": "migrate",
+      "status": "verified",
+      "next_action": "table + policies live; no screen yet"
+    },
+    {
+      "capability": "scope items",
+      "source": "app/routers/incidents.py",
+      "outcome": "migrate",
+      "status": "verified",
+      "next_action": "table + policies live; no screen yet"
+    },
+    {
+      "capability": "auto runs (recon/fix/validate pipeline, stubs)",
+      "source": "app/routers/auto.py",
+      "outcome": "migrate",
+      "status": "verified",
+      "next_action": "table + policies live; stages remain stubs (AI agent not attached in source either)"
+    },
+    {
+      "capability": "audit log (append-only)",
+      "source": "app/security.py audit(), app/db.py",
+      "outcome": "migrate",
+      "status": "verified",
+      "next_action": "none — audit_events table; feeds command-center activity and team audit tab"
+    },
+    {
+      "capability": "realtime comms (WS /ws/comms/{channel})",
+      "source": "app/main.py, app/realtime.py",
+      "outcome": "migrate",
+      "status": "pending",
+      "next_action": "Replace with Supabase Realtime channels in a follow-up"
+    },
+    {
+      "capability": "records",
+      "source": "in-memory dicts only; no export exists",
+      "outcome": "not-applicable",
+      "status": "verified",
+      "next_action": "none — source had no persistent data"
+    },
+    {
+      "capability": "secrets",
+      "source": "JWT_SECRET, CORS_ORIGINS env vars",
+      "outcome": "not-applicable",
+      "status": "verified",
+      "next_action": "none — platform-specific, replaced by Lovable Cloud auth"
+    }
+  ]
+}
