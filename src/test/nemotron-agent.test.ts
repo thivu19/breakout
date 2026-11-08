@@ -26,6 +26,7 @@ describe("Nemotron retrieval agent", () => {
     expect(fetcher.mock.calls[1]?.[0]).toContain("/v1/search/BreakoutDocumentSummary/near-vector");
     expect(loader).toHaveBeenCalledWith(docs.map(doc => doc.id));
     const prompt = JSON.parse(JSON.parse(fetcher.mock.calls[2]?.[1].body).messages[1].content);
+    expect(JSON.parse(fetcher.mock.calls[2]?.[1].body).temperature).toBe(0.7);
     expect(prompt.documents[0].content).toBe("Record evidence.");
     expect(prompt.documents[1].category).toBe("Journal");
     expect(result.execution).toBe("disabled");
@@ -55,6 +56,7 @@ describe("Nemotron retrieval agent", () => {
     expect(object.properties.category).toBe(category);
     expect(JSON.stringify(object)).not.toContain("FULL PRIVATE SOURCE");
     expect(JSON.parse(fetcher.mock.calls[3]?.[1].body).input_type).toBe("passage");
+    expect(JSON.parse(fetcher.mock.calls[2]?.[1].body).temperature).toBe(0);
   });
   it.each(Object.keys(toolTemplates))("keeps %s as a non-executing TODO", async name => {
     await expect(toolTemplates[name]?.execute()).rejects.toThrow("not implemented");
