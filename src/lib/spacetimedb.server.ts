@@ -5,41 +5,20 @@ type Schema = {
   reducers?: { name: string }[];
 };
 
-export type ModuleMode = "protected" | "demo";
-
-async function fetchSchema(token: string): Promise<Schema> {
+// No env reads or credentials at module scope. Token comes only from authenticated handlers.
+export async function verifyProtectedModule(token: string): Promise<void> {
   if (!token) throw new Error("SpacetimeDB activation requires a securely stored owner token.");
   const response = await fetch(`${SPACETIMEDB_URL}/schema?version=9`, {
     headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(10000),
   });
   if (!response.ok) throw new Error("Cannot verify SpacetimeDB access protections.");
-  return await response.json() as Schema;
-}
-
-const REQUIRED_TABLES = ["person", "breakout", "documents"];
-
-function isProtected(schema: Schema) {
-  return schema.tables?.length === 3 && REQUIRED_TABLES.every(name =>
+  const schema = await response.json() as Schema;
+  const required = ["person", "breakout", "documents"];
+  if (schema.tables?.length !== 3 || !required.every(name =>
     schema.tables?.some(table => table.name === name && table.table_access && "Private" in table.table_access),
-  ) && ["update_person_role", "provision_person"].every(name => schema.reducers?.some(r => r.name === name));
-}
-
-// No env reads or credentials at module scope. Token comes only from authenticated handlers.
-export async function verifyProtectedModule(token: string): Promise<void> {
-  if (!isProtected(await fetchSchema(token))) {
+  ) || !["update_person_role", "provision_person"].every(name => schema.reducers?.some(r => r.name === name))) {
     throw new Error("The protected SpacetimeDB module must be published before activation.");
   }
-}
-
-/**
- * Hackathon demo: the owner chose to run against the original public module with mock data.
- * Demo mode reads only; it never writes new members or roles into public tables.
- */
-export async function detectModuleMode(token: string): Promise<ModuleMode> {
-  const schema = await fetchSchema(token);
-  if (isProtected(schema)) return "protected";
-  if (REQUIRED_TABLES.every(name => schema.tables?.some(t => t.name === name))) return "demo";
-  throw new Error("The SpacetimeDB database is missing the person, breakout and documents tables.");
 }
 
 async function readRows(token: string, table: "person" | "breakout" | "documents") {
@@ -51,29 +30,15 @@ async function readRows(token: string, table: "person" | "breakout" | "documents
   return decodeSqlRows(await response.text());
 }
 
-export type Member = { id: string; name: string; email: string; role: ReturnType<typeof decodeRole> };
-
-async function readPeople(token: string): Promise<Member[]> {
-  return (await readRows(token, "person")).map(row => ({
-    id: decodeUuid(row[0]), name: textField(row[1]), email: textField(row[3]), role: decodeRole(row[5]),
-  }));
-}
-
 export async function getVerifiedPeople(token: string, userId: string) {
   await verifyProtectedModule(token);
-  const people = await readPeople(token);
+  const people = (await readRows(token, "person")).map(row => ({
+    id: decodeUuid(row[0]), name: textField(row[1]), email: textField(row[3]), role: decodeRole(row[5]),
+  }));
   if (new Set(people.map(p => p.id)).size !== people.length) throw new Error("Duplicate member identities must be reconciled before activation.");
   const currentUser = people.find(p => p.id === userId);
   if (!currentUser) throw new Error("Your verified account has not been migrated to SpacetimeDB yet.");
-  return { people, currentUser, mode: "protected" as ModuleMode };
-}
-
-/** Demo mode: match the signed-in account by email; unknown accounts view as a plain user without being written. */
-async function getDemoPeople(token: string, userId: string, name: string, email: string) {
-  const people = await readPeople(token);
-  const match = email ? people.find(p => p.email.trim().toLowerCase() === email.trim().toLowerCase()) : undefined;
-  const currentUser: Member = match ?? { id: userId, name, email, role: "user" };
-  return { people: match ? people : [...people, currentUser], currentUser, mode: "demo" as ModuleMode };
+  return { people, currentUser };
 }
 
 export async function readBreakouts(token: string) {
@@ -98,7 +63,6 @@ export async function readAgentDocuments(token: string) {
 
 /** Ensure the signed-in account has a person row; new members always start as "user". */
 export async function ensurePerson(token: string, userId: string, name: string, email: string) {
-  if (await detectModuleMode(token) === "demo") return getDemoPeople(token, userId, name, email);
   try {
     return await getVerifiedPeople(token, userId);
   } catch (err) {

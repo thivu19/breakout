@@ -36,13 +36,11 @@ export const getSpacetimeMe = createServerFn({ method: "GET" })
 export const getSpacetimeTeam = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { people, currentUser, mode } = await currentMember(context);
+    const { people, currentUser } = await currentMember(context);
     return {
-      members: people.map((p) => ({ ...p, you: p.id === currentUser.id })),
-      // Demo (public) module has no role-editing reducer, so controls stay read-only there.
-      currentUserIsAdmin: mode === "protected" && currentUser.role === "admin",
-      currentUserId: currentUser.id,
-      mode,
+      members: people.map((p) => ({ ...p, you: p.id === context.userId })),
+      currentUserIsAdmin: currentUser.role === "admin",
+      currentUserId: context.userId,
     };
   });
 
@@ -61,8 +59,7 @@ export const updateSpacetimeRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ userId: z.string().uuid(), role: z.enum(["admin", "user"]) }))
   .handler(async ({ context, data }) => {
-    const { token, currentUser, people, mode } = await currentMember(context);
-    if (mode === "demo") throw new Error("Role editing needs the protected SpacetimeDB module; the demo database is read-only for roles.");
+    const { token, currentUser, people } = await currentMember(context);
     if (currentUser.role !== "admin") throw new Error("Only administrators can change roles.");
     if (context.userId === data.userId) throw new Error("You cannot change your own role.");
     if (!people.some((p) => p.id === data.userId)) throw new Error("Member not found.");
