@@ -31,4 +31,6 @@ use the editor.
 
 ## Project rules
 
-- Light/dark theme follows the visitor's system setting via `@media (prefers-color-scheme: dark)` in `src/styles.css` (ported from the original Next.js app); do not switch to a class-based toggle without being asked.
+- The UI is a dark-only operations console; all colors live as oklch tokens in `src/styles.css` and components use semantic utilities only (no light/dark switching).
+- Screen demo data lives in `src/lib/breakout-data.ts`; screens read from it instead of inlining records, so a real backend can replace one module later.
+- Shared screen chrome (sidebar, top bar, auth split layout) lives in `src/components/breakout/`; new app pages wrap their content in `AppShell`.
