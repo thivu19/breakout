@@ -8,6 +8,10 @@
 
 # HackUTD JavaScript agent
 
+- [ ] Add isolated JavaScript AI modules for Nemotron summaries, Weaviate indexing/top-two retrieval, and SpacetimeDB document hydration.
+- [ ] Add five non-executing tool templates and structured Nemotron action proposals.
+- [ ] Request missing secure NVIDIA and Weaviate settings, test retrieval boundaries, and verify the signed-in workflow.
+
 - [x] Convert the action catalog and grounded response workflow to JavaScript.
 - [x] Wire incident and document context to authenticated SpacetimeDB reads; add visible-dashboard polling.
 - [x] Add an incident-response dialog with an explicitly labelled Ollama placeholder and future Nemotron adapter.
