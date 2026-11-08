@@ -114,6 +114,8 @@ function TeamAccess() {
   }, [members, query, roleFilter, statusFilter]);
 
   const roleCounts = roles.map((r) => members.filter((m) => m.role === r).length);
+  const adminCount = members.filter((m) => m.role === "Administrator").length;
+  const commanderCount = members.filter((m) => m.role === "Incident commander").length;
   const allSelected = filtered.length > 0 && filtered.every((m) => selected.has(m.email));
 
   const changeRole = (email: string, role: Role) => {
@@ -259,9 +261,9 @@ function TeamAccess() {
                 Privileged access <ShieldCheck className="size-4 text-primary" />
               </div>
               <p className="mt-3 flex items-baseline gap-4">
-                <span className="text-3xl tabular">{roleCounts[0] + roleCounts[1]}</span>
+                <span className="text-3xl tabular">{adminCount + commanderCount}</span>
                 <span className="text-sm text-muted-foreground">
-                  {roleCounts[0]} admin · {roleCounts[1]} commander
+                  {adminCount} admin · {commanderCount} commander
                 </span>
               </p>
             </Panel>
