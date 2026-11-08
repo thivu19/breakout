@@ -36,6 +36,13 @@ export function decodeTimestamp(value: unknown): string {
 }
 
 export function decodeRole(value: unknown): SpacetimeRole {
+  // SQL responses encode enums as [tag, payload].
+  if (Array.isArray(value) && value.length === 2) {
+    const tag = Number(value[0]);
+    if (tag === 0) return "user";
+    if (tag === 1) return "admin";
+    throw new Error("Invalid role.");
+  }
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Invalid role.");
   const keys = Object.keys(value);
   if (keys.length !== 1) throw new Error("Invalid role.");
