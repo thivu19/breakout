@@ -71,7 +71,7 @@ export function Sparkline({ points, tone }: { points: number[]; tone: "danger" |
     .join(" ");
   const stroke = { danger: "stroke-danger", muted: "stroke-muted-foreground", foreground: "stroke-foreground" }[tone];
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="h-14 w-[120px]" aria-hidden>
+    <svg viewBox={`0 0 ${w} ${h}`} className="h-14 w-[120px] min-w-0 shrink" aria-hidden>
       <polyline points={d} fill="none" strokeWidth="1.5" strokeLinejoin="round" className={stroke} />
     </svg>
   );

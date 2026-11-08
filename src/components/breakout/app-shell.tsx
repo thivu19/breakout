@@ -175,7 +175,7 @@ export function AppShell({
                 placeholder="Search incidents, assets, evidence..."
                 className="w-full bg-transparent text-foreground outline-none placeholder:text-subtle"
               />
-              <kbd className="font-mono text-[0.65rem] text-subtle">⌘ K</kbd>
+              <kbd className="whitespace-nowrap font-mono text-[0.65rem] text-subtle">⌘ K</kbd>
             </label>
             <button type="button" aria-label="Notifications" className="text-muted-foreground hover:text-foreground">
               <Bell className="size-5" />

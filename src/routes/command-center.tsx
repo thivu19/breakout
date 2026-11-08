@@ -99,7 +99,7 @@ function CommandCenter() {
               <ArrowUpRight className="size-4 text-subtle" />
             </div>
             <div className="mt-2 flex items-end justify-between gap-2">
-              <p className="text-4xl font-normal tracking-tight tabular">{k.value}</p>
+              <p className="whitespace-nowrap text-4xl font-normal tracking-tight tabular">{k.value}</p>
               <Sparkline points={k.trend} tone={i === 0 ? "danger" : "foreground"} />
             </div>
             <p className="mt-3 text-sm text-muted-foreground">
