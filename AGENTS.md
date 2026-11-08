@@ -32,5 +32,5 @@ use the editor.
 ## Project rules
 
 - The UI is a dark-only operations console; all colors live as oklch tokens in `src/styles.css` and components use semantic utilities only (no light/dark switching).
-- Screen demo data lives in `src/lib/breakout-data.ts`; screens read from it instead of inlining records, so a real backend can replace one module later.
+- App data lives in Lovable Cloud (profiles, user_roles, breakouts, documents, scope_items, auto_runs, audit_events); screens read it through the `createServerFn` functions in `src/lib/breakout.functions.ts` (all gated by `requireSupabaseAuth`). `src/lib/breakout-data.ts` remains only for static UI fixtures (KPIs, permission matrix, containment demo).
 - Shared screen chrome (sidebar, top bar, auth split layout) lives in `src/components/breakout/`; new app pages wrap their content in `AppShell`.
