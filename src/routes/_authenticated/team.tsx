@@ -2,38 +2,33 @@ import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import {
-  ArrowRight,
   Check,
   ChevronDown,
   Download,
-  Eye,
   Lock,
   LockKeyhole,
   Mail,
   Minus,
-  MoreHorizontal,
-  Pencil,
   Plus,
   Search,
   Shield,
-  ShieldAlert,
   ShieldCheck,
   Users,
 } from "lucide-react";
 import { AppShell, Avatar, CountChip, Panel } from "@/components/breakout/app-shell";
 import { Pill } from "@/components/breakout/badges";
 import { Button } from "@/components/ui/button";
-import { roleDisplay, roleFromDisplay, teamQuery, updateMemberRole, type AppRole } from "@/lib/breakout.functions";
+import { spacetimeTeamQuery, updateSpacetimeRole, type SpacetimeRole } from "@/lib/spacetimedb.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/team")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(teamQuery),
+  loader: ({ context }) => context.queryClient.ensureQueryData(spacetimeTeamQuery),
   head: () => ({
     meta: [
       { title: "Team & access — Breakout" },
-      { name: "description", content: "Manage workspace members, roles, and least-privilege permissions for your response team." },
+      { name: "description", content: "Manage workspace members and administrator access for your response team." },
       { property: "og:title", content: "Team & access — Breakout" },
-      { property: "og:description", content: "Manage workspace members, roles, and least-privilege permissions for your response team." },
+      { property: "og:description", content: "Manage workspace members and administrator access for your response team." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -41,41 +36,20 @@ export const Route = createFileRoute("/_authenticated/team")({
   component: TeamAccess,
 });
 
-type Tab = "members" | "roles" | "audit";
+type Tab = "members" | "roles";
 
-/** Display roles in column order; values map to app_role via roleFromDisplay. */
-const displayRoles = ["Administrator", "Incident commander", "Responder", "Legal", "Observer"] as const;
-type DisplayRole = (typeof displayRoles)[number];
+const roleLabel: Record<SpacetimeRole, string> = { admin: "Administrator", user: "User" };
+const roles: SpacetimeRole[] = ["admin", "user"];
 
-/** Least-privilege matrix: per permission, the value for each role in displayRoles order. */
-const permissionMatrix: { label: string; locked?: boolean; values: string[] }[] = [
-  { label: "View incidents & evidence", values: ["All incidents", "All incidents", "Assigned only", "Assigned only", "Assigned only"] },
-  { label: "Investigate & run playbooks", values: ["Allowed", "Allowed", "Allowed", "Denied", "Denied"] },
-  { label: "Request containment", values: ["Allowed", "Allowed", "Allowed", "Denied", "Denied"] },
-  { label: "Approve containment & isolate assets", locked: true, values: ["Allowed", "Allowed", "Denied", "Denied", "Denied"] },
-  { label: "Export evidence", locked: true, values: ["Allowed", "Allowed", "Denied", "Allowed", "Denied"] },
-  { label: "Manage members, roles & integrations", locked: true, values: ["Allowed", "Denied", "Denied", "Denied", "Denied"] },
+const permissionMatrix: { label: string; locked?: boolean; values: [boolean, boolean] }[] = [
+  { label: "View incidents & breakouts", values: [true, true] },
+  { label: "Review containment actions", values: [true, true] },
+  { label: "Change member roles", locked: true, values: [true, false] },
 ];
 
-function RoleIcon({ role }: { role: DisplayRole }) {
-  if (role === "Observer") return <Eye className="size-4 text-muted-foreground" />;
-  if (role === "Responder" || role === "Legal") return <Shield className="size-4 text-muted-foreground" />;
-  return <ShieldCheck className="size-4 text-primary" />;
-}
-
-function SelectBox({
-  value,
-  onChange,
-  options,
-  className,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  options: string[];
-  className?: string;
-}) {
+function SelectBox({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
   return (
-    <label className={cn("relative", className)}>
+    <label className="relative">
       <ChevronDown className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
       <select
         value={value}
@@ -90,71 +64,35 @@ function SelectBox({
   );
 }
 
-function PermissionCell({ value }: { value: string }) {
-  if (value === "Allowed")
-    return (
-      <span className="inline-flex items-center gap-2 text-success">
-        <Check className="size-4" /> Allowed
-      </span>
-    );
-  if (value === "Denied")
-    return (
-      <span className="inline-flex items-center gap-2 text-muted-foreground">
-        <Minus className="size-4" /> Denied
-      </span>
-    );
-  return (
-    <span className="inline-flex items-center gap-2 text-muted-foreground">
-      <Eye className="size-4" /> {value}
-    </span>
-  );
-}
-
 function TeamAccess() {
   const queryClient = useQueryClient();
-  const { data } = useSuspenseQuery(teamQuery);
+  const { data } = useSuspenseQuery(spacetimeTeamQuery);
   const [tab, setTab] = useState<Tab>("members");
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("All roles");
-  const [statusFilter, setStatusFilter] = useState("All statuses");
-  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [roleError, setRoleError] = useState<string | null>(null);
   const [pendingRoleFor, setPendingRoleFor] = useState<string | null>(null);
 
-  const members = useMemo(
-    () =>
-      data.members.map((m) => ({
-        ...m,
-        displayRole: roleDisplay[m.role] as DisplayRole,
-        scope: m.role === "admin" || m.role === "incident_commander" ? "All incidents" : "Assigned incidents",
-        status: "Active" as const,
-      })),
-    [data.members],
-  );
-
+  const members = data.members;
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return members.filter(
       (m) =>
         (!q || m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q)) &&
-        (roleFilter === "All roles" || m.displayRole === roleFilter) &&
-        (statusFilter === "All statuses" || m.status === statusFilter),
+        (roleFilter === "All roles" || roleLabel[m.role] === roleFilter),
     );
-  }, [members, query, roleFilter, statusFilter]);
+  }, [members, query, roleFilter]);
 
-  const roleCounts = displayRoles.map((r) => members.filter((m) => m.displayRole === r).length);
-  const adminCount = members.filter((m) => m.displayRole === "Administrator").length;
-  const commanderCount = members.filter((m) => m.displayRole === "Incident commander").length;
-  const allSelected = filtered.length > 0 && filtered.every((m) => selected.has(m.email));
+  const adminCount = members.filter((m) => m.role === "admin").length;
 
-  const changeRole = async (userId: string, next: DisplayRole) => {
+  const changeRole = async (userId: string, next: SpacetimeRole) => {
     const m = members.find((x) => x.id === userId);
-    if (!m || m.displayRole === next) return;
+    if (!m || m.role === next) return;
     setRoleError(null);
     setPendingRoleFor(userId);
     try {
-      await updateMemberRole({ data: { userId, role: roleFromDisplay[next] as AppRole } });
-      await queryClient.invalidateQueries({ queryKey: ["team"] });
+      await updateSpacetimeRole({ data: { userId, role: next } });
+      await queryClient.invalidateQueries({ queryKey: ["stdb"] });
     } catch (err) {
       setRoleError(err instanceof Error ? err.message : "Role change failed.");
     } finally {
@@ -162,72 +100,63 @@ function TeamAccess() {
     }
   };
 
-  const tabs: { key: Tab; label: string; count?: number }[] = [
+  const tabs: { key: Tab; label: string; count: number }[] = [
     { key: "members", label: "Members", count: members.length },
-    { key: "roles", label: "Roles", count: displayRoles.length },
-    { key: "audit", label: "Audit log" },
+    { key: "roles", label: "Roles", count: roles.length },
   ];
 
   const rolePermissions = (
     <Panel className="mt-6 overflow-hidden">
-      <div className="flex flex-wrap items-start justify-between gap-4 px-6 py-5">
-        <div>
-          <h2 className="text-xl font-semibold">Role permissions</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Least privilege by default. Role changes take effect immediately and are recorded in the audit log.
-          </p>
-        </div>
-        <Button variant="panel" size="lg">
-          <Plus /> Create role
-        </Button>
+      <div className="px-6 py-5">
+        <h2 className="text-xl font-semibold">Role permissions</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Two roles. Role changes take effect immediately; only administrators can make them.
+        </p>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[860px] text-left text-[0.95rem]">
+        <table className="w-full min-w-[560px] text-left text-[0.95rem]">
           <thead>
             <tr className="border-y border-border">
               <th className="eyebrow px-6 py-3 text-[0.65rem] font-normal text-subtle">Permission</th>
-              {displayRoles.map((r, i) => (
-                <th key={r} className="px-3 py-3 text-center font-normal">
-                  <span className="inline-flex items-center gap-2 font-medium">
-                    {r}
-                    {r === "Administrator" ? (
-                      <Lock className="size-3.5 text-subtle" />
-                    ) : (
-                      <Pencil className="size-3.5 text-primary" />
-                    )}
-                  </span>
-                  <span className="eyebrow block text-[0.6rem] text-subtle">
-                    {roleCounts[i]} {roleCounts[i] === 1 ? "member" : "members"}
-                  </span>
-                </th>
-              ))}
+              {roles.map((r) => {
+                const count = members.filter((m) => m.role === r).length;
+                return (
+                  <th key={r} className="px-3 py-3 text-center font-normal">
+                    <span className="font-medium">{roleLabel[r]}</span>
+                    <span className="eyebrow block text-[0.6rem] text-subtle">
+                      {count} {count === 1 ? "member" : "members"}
+                    </span>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
             {permissionMatrix.map((p) => (
-              <tr key={p.label} className="border-b border-border">
+              <tr key={p.label} className="border-b border-border last:border-0">
                 <td className="px-6 py-3">
                   <span className="inline-flex items-center gap-2">
                     {p.label}
                     {p.locked && <LockKeyhole className="size-3.5 text-warning" />}
                   </span>
                 </td>
-                {p.values.map((v, i) => (
+                {p.values.map((allowed, i) => (
                   <td key={i} className="px-3 py-3 text-center text-sm">
-                    <PermissionCell value={v} />
+                    {allowed ? (
+                      <span className="inline-flex items-center gap-2 text-success">
+                        <Check className="size-4" /> Allowed
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-2 text-muted-foreground">
+                        <Minus className="size-4" /> Denied
+                      </span>
+                    )}
                   </td>
                 ))}
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
-      <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
-        <span className="flex items-center gap-2 text-sm text-muted-foreground">
-          <ShieldAlert className="size-4 text-warning" />
-          Sensitive actions require MFA. Containment approval must come from someone other than the requester.
-        </span>
-        <span className="eyebrow text-[0.6rem] text-subtle">Administrator is a protected role</span>
       </div>
     </Panel>
   );
@@ -236,7 +165,7 @@ function TeamAccess() {
     <AppShell
       active="team"
       breadcrumbs={[{ label: "Workspace" }, { label: "Team & access" }]}
-      footerRight="Every access change logged. No exceptions."
+      footerRight="Only administrators can change access."
     >
       <div className="flex flex-wrap items-end justify-between gap-6">
         <div>
@@ -271,7 +200,7 @@ function TeamAccess() {
             )}
           >
             {t.label}
-            {t.count !== undefined && <span className="font-mono text-[0.65rem] text-subtle">{t.count}</span>}
+            <span className="font-mono text-[0.65rem] text-subtle">{t.count}</span>
           </button>
         ))}
       </div>
@@ -283,21 +212,13 @@ function TeamAccess() {
               <div className="flex justify-between text-[0.95rem] text-muted-foreground">
                 Workspace members <Users className="size-4" />
               </div>
-              <p className="mt-3 flex items-baseline gap-4">
-                <span className="text-3xl tabular">{members.length}</span>
-                <span className="text-sm text-muted-foreground">{members.length} active</span>
-              </p>
+              <p className="mt-3 text-3xl tabular">{members.length}</p>
             </Panel>
             <Panel className="p-5">
               <div className="flex justify-between text-[0.95rem] text-muted-foreground">
-                Privileged access <ShieldCheck className="size-4 text-primary" />
+                Administrators <ShieldCheck className="size-4 text-primary" />
               </div>
-              <p className="mt-3 flex items-baseline gap-4">
-                <span className="text-3xl tabular">{adminCount + commanderCount}</span>
-                <span className="text-sm text-muted-foreground">
-                  {adminCount} admin · {commanderCount} commander
-                </span>
-              </p>
+              <p className="mt-3 text-3xl tabular">{adminCount}</p>
             </Panel>
             <Panel className="p-5">
               <div className="flex justify-between text-[0.95rem] text-muted-foreground">
@@ -313,7 +234,6 @@ function TeamAccess() {
                 Authentication policy <Lock className="size-4 text-success" />
               </div>
               <p className="mt-3 text-lg text-success">Email + password</p>
-              <p className="eyebrow mt-2 text-[0.6rem] text-subtle">MFA enrollment available per member</p>
             </Panel>
           </div>
 
@@ -344,54 +264,23 @@ function TeamAccess() {
                   className="w-full bg-transparent outline-none placeholder:text-subtle"
                 />
               </label>
-              <SelectBox value={roleFilter} onChange={setRoleFilter} options={["All roles", ...displayRoles]} />
-              <SelectBox value={statusFilter} onChange={setStatusFilter} options={["All statuses", "Active", "Invited"]} />
+              <SelectBox value={roleFilter} onChange={setRoleFilter} options={["All roles", ...roles.map((r) => roleLabel[r])]} />
               <span className="eyebrow ml-auto text-[0.6rem] text-subtle">{filtered.length} members</span>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1000px] text-left">
+              <table className="w-full min-w-[760px] text-left">
                 <thead>
                   <tr className="eyebrow border-y border-border text-[0.65rem] text-subtle">
-                    <th className="w-12 py-3 pl-6">
-                      <input
-                        type="checkbox"
-                        aria-label="Select all members"
-                        checked={allSelected}
-                        onChange={(e) =>
-                          setSelected(e.target.checked ? new Set(filtered.map((m) => m.email)) : new Set())
-                        }
-                        className="size-4 accent-primary"
-                      />
-                    </th>
-                    <th className="px-3 py-3 font-normal">Member ↑</th>
+                    <th className="px-6 py-3 font-normal">Member ↑</th>
                     <th className="px-3 py-3 font-normal">Role</th>
-                    <th className="px-3 py-3 font-normal">Incident scope</th>
                     <th className="px-3 py-3 font-normal">Authentication</th>
                     <th className="px-3 py-3 font-normal">Status</th>
-                    <th className="px-3 py-3 font-normal">Last active</th>
-                    <th className="w-12" />
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((m) => (
-                    <tr key={m.email} className="border-b border-border hover:bg-panel">
-                      <td className="py-4 pl-6">
-                        <input
-                          type="checkbox"
-                          aria-label={`Select ${m.name}`}
-                          checked={selected.has(m.email)}
-                          onChange={(e) =>
-                            setSelected((s) => {
-                              const n = new Set(s);
-                              if (e.target.checked) n.add(m.email);
-                              else n.delete(m.email);
-                              return n;
-                            })
-                          }
-                          className="size-4 accent-primary"
-                        />
-                      </td>
-                      <td className="px-3 py-4">
+                    <tr key={m.id} className="border-b border-border hover:bg-panel">
+                      <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <Avatar name={m.name} className={cn("size-10", m.you && "bg-secondary text-info")} />
                           <div>
@@ -399,35 +288,35 @@ function TeamAccess() {
                               {m.name}
                               {m.you && <span className="eyebrow ml-2 text-[0.6rem] text-subtle">You</span>}
                             </p>
-                            <p className="text-sm text-muted-foreground">{m.email}</p>
+                            <p className="text-sm text-muted-foreground">{m.email || "—"}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-3 py-4">
-                        <label className="relative flex w-56 items-center">
+                        <label className="relative flex w-48 items-center">
                           <span className="pointer-events-none absolute left-3">
-                            <RoleIcon role={m.displayRole} />
+                            {m.role === "admin" ? (
+                              <ShieldCheck className="size-4 text-primary" />
+                            ) : (
+                              <Shield className="size-4 text-muted-foreground" />
+                            )}
                           </span>
                           <select
-                            value={m.displayRole}
-                            disabled={
-                              m.displayRole === "Administrator" ||
-                              m.you ||
-                              !data.currentUserIsAdmin ||
-                              pendingRoleFor === m.id
-                            }
-                            onChange={(e) => changeRole(m.id, e.target.value as DisplayRole)}
+                            value={m.role}
+                            disabled={m.you || !data.currentUserIsAdmin || pendingRoleFor === m.id}
+                            onChange={(e) => changeRole(m.id, e.target.value as SpacetimeRole)}
                             aria-label={`Role for ${m.name}`}
                             className="h-10 w-full appearance-none rounded-md border border-border bg-inset pl-10 pr-8 text-sm text-foreground outline-none hover:border-input disabled:cursor-not-allowed"
                           >
-                            {displayRoles.map((r) => (
-                              <option key={r}>{r}</option>
+                            {roles.map((r) => (
+                              <option key={r} value={r}>
+                                {roleLabel[r]}
+                              </option>
                             ))}
                           </select>
                           <ChevronDown className="pointer-events-none absolute right-3 size-4 text-muted-foreground" />
                         </label>
                       </td>
-                      <td className="px-3 py-4 text-[0.95rem]">{m.scope}</td>
                       <td className="px-3 py-4 text-sm">
                         <span className="flex items-center gap-2">
                           <ShieldCheck className="size-4 text-success" /> Email + password
@@ -435,22 +324,14 @@ function TeamAccess() {
                       </td>
                       <td className="px-3 py-4">
                         <Pill tone="success" dot>
-                          {m.status}
+                          Active
                         </Pill>
-                      </td>
-                      <td className={cn("px-3 py-4 font-mono text-xs", m.you ? "text-success" : "text-muted-foreground")}>
-                        {m.you ? "Online now" : "—"}
-                      </td>
-                      <td className="pr-6">
-                        <button type="button" aria-label={`More actions for ${m.name}`} className="text-muted-foreground hover:text-foreground">
-                          <MoreHorizontal className="size-5" />
-                        </button>
                       </td>
                     </tr>
                   ))}
                   {filtered.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="px-6 py-10 text-center text-muted-foreground">
+                      <td colSpan={4} className="px-6 py-10 text-center text-muted-foreground">
                         No members match these filters.
                       </td>
                     </tr>
@@ -458,17 +339,10 @@ function TeamAccess() {
                 </tbody>
               </table>
             </div>
-            <div className="flex items-center justify-between px-6 py-4">
+            <div className="px-6 py-4">
               <span className="eyebrow text-[0.6rem] text-subtle">
                 Showing {filtered.length} of {members.length} members
               </span>
-              <button
-                type="button"
-                onClick={() => setTab("audit")}
-                className="flex items-center gap-2 text-sm font-medium text-primary hover:underline"
-              >
-                View access audit log <ArrowRight className="size-4" />
-              </button>
             </div>
           </Panel>
 
@@ -477,35 +351,6 @@ function TeamAccess() {
       )}
 
       {tab === "roles" && rolePermissions}
-
-      {tab === "audit" && (
-        <Panel className="mt-6 p-6">
-          <h2 className="text-xl font-semibold">Access audit log</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Every role change made in this workspace is recorded here.</p>
-          {data.accessEvents.length === 0 ? (
-            <p className="mt-8 rounded-lg border border-dashed border-border px-6 py-10 text-center text-muted-foreground">
-              No access changes yet. Change a member’s role on the Members tab to see it logged.
-            </p>
-          ) : (
-            <ul className="mt-6 divide-y divide-border">
-              {data.accessEvents.map((a) => {
-                const d = a.detail as { user_name?: string; role?: string };
-                const time = new Date(a.created_at).toISOString().slice(11, 16);
-                return (
-                  <li key={a.id} className="flex gap-6 py-3">
-                    <span className="w-20 font-mono text-xs text-subtle">{time} UTC</span>
-                    <span className="eyebrow w-14 text-[0.65rem] text-muted-foreground">Audit</span>
-                    <span className="text-sm">
-                      {a.actor_name ?? "System"} changed {d.user_name ?? "a member"} to{" "}
-                      {roleDisplay[(d.role ?? "observer") as AppRole]}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </Panel>
-      )}
     </AppShell>
   );
 }

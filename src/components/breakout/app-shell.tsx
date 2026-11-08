@@ -1,5 +1,6 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
   ChartNoAxesColumn,
@@ -18,7 +19,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { roleDisplay, type AppRole } from "@/lib/breakout.functions";
+import { spacetimeMeQuery } from "@/lib/spacetimedb.functions";
 import { Logo } from "./logo";
 
 type NavKey = "command-center" | "team";
@@ -70,30 +71,13 @@ function NavItem({
 
 function CurrentUser() {
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<{ name: string; role: string } | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!data.user || cancelled) return;
-      const [{ data: p }, { data: r }] = await Promise.all([
-        supabase.from("profiles").select("name").eq("id", data.user.id).maybeSingle(),
-        supabase.from("user_roles").select("role").eq("user_id", data.user.id).maybeSingle(),
-      ]);
-      if (cancelled) return;
-      setProfile({
-        name: p?.name ?? data.user.email ?? "Operator",
-        role: roleDisplay[(r?.role ?? "observer") as AppRole],
-      });
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const queryClient = useQueryClient();
+  const { data: me } = useQuery(spacetimeMeQuery);
+  const profile = me ? { name: me.name, role: me.role === "admin" ? "Administrator" : "User" } : null;
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    queryClient.clear();
     navigate({ to: "/login" });
   };
 
