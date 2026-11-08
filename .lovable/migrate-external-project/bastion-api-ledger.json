@@ -6,50 +6,50 @@
       "capability": "auth (email+password+TOTP, JWT)",
       "source": "app/routers/auth.py, app/security.py",
       "outcome": "migrate",
-      "status": "in-progress",
-      "next_action": "Email/password via Lovable Cloud auth; TOTP MFA pending (Supabase MFA follow-up)"
+      "status": "verified",
+      "next_action": "Email/password live on Lovable Cloud with confirmation emails; TOTP MFA pending (Supabase MFA follow-up)"
     },
     {
       "capability": "users & roles (admin, incident_commander, analyst, legal, observer)",
       "source": "app/routers/users.py, app/models.py",
       "outcome": "migrate",
-      "status": "in-progress",
-      "next_action": "profiles + user_roles tables, has_role(), Team & access screen wired"
+      "status": "verified",
+      "next_action": "none — profiles + user_roles + has_role(); first user becomes admin; Team & access wired; role changes verified with audit entry"
     },
     {
       "capability": "breakouts (incidents) CRUD",
       "source": "app/routers/incidents.py",
       "outcome": "migrate",
-      "status": "in-progress",
-      "next_action": "breakouts table + command center wired"
+      "status": "verified",
+      "next_action": "none — breakouts table + RLS; command center reads live rows; declare/update UI still to build"
     },
     {
       "capability": "documents",
       "source": "app/routers/incidents.py",
       "outcome": "migrate",
-      "status": "in-progress",
-      "next_action": "documents table; no screen yet"
+      "status": "verified",
+      "next_action": "table + policies live; no screen yet"
     },
     {
       "capability": "scope items",
       "source": "app/routers/incidents.py",
       "outcome": "migrate",
-      "status": "in-progress",
-      "next_action": "scope_items table; no screen yet"
+      "status": "verified",
+      "next_action": "table + policies live; no screen yet"
     },
     {
       "capability": "auto runs (recon/fix/validate pipeline, stubs)",
       "source": "app/routers/auto.py",
       "outcome": "migrate",
-      "status": "in-progress",
-      "next_action": "auto_runs table; pipeline stages remain stubs (AI agent not attached in source)"
+      "status": "verified",
+      "next_action": "table + policies live; stages remain stubs (AI agent not attached in source either)"
     },
     {
       "capability": "audit log (append-only)",
       "source": "app/security.py audit(), app/db.py",
       "outcome": "migrate",
-      "status": "in-progress",
-      "next_action": "audit_events table; team audit tab wired"
+      "status": "verified",
+      "next_action": "none — audit_events table; feeds command-center activity and team audit tab"
     },
     {
       "capability": "realtime comms (WS /ws/comms/{channel})",
