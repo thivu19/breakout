@@ -246,7 +246,9 @@ function TeamAccess() {
               <span className="text-sm text-muted-foreground">
                 {data.currentUserIsAdmin
                   ? "Select a role to change a member’s access"
-                  : "Only administrators can change roles"}
+                  : data.mode === "demo"
+                    ? "Demo database · roles are view-only"
+                    : "Only administrators can change roles"}
               </span>
             </div>
             {roleError && (
