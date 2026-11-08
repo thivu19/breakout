@@ -1,0 +1,76 @@
+{
+  "source": "code-archive",
+  "source_stack": "FastAPI (Python) in-memory backend shell: auth+TOTP login, users/roles, breakouts, documents, scope, auto runs, WS comms",
+  "capabilities": [
+    {
+      "capability": "auth (email+password+TOTP, JWT)",
+      "source": "app/routers/auth.py, app/security.py",
+      "outcome": "migrate",
+      "status": "in-progress",
+      "next_action": "Email/password via Lovable Cloud auth; TOTP MFA pending (Supabase MFA follow-up)"
+    },
+    {
+      "capability": "users & roles (admin, incident_commander, analyst, legal, observer)",
+      "source": "app/routers/users.py, app/models.py",
+      "outcome": "migrate",
+      "status": "in-progress",
+      "next_action": "profiles + user_roles tables, has_role(), Team & access screen wired"
+    },
+    {
+      "capability": "breakouts (incidents) CRUD",
+      "source": "app/routers/incidents.py",
+      "outcome": "migrate",
+      "status": "in-progress",
+      "next_action": "breakouts table + command center wired"
+    },
+    {
+      "capability": "documents",
+      "source": "app/routers/incidents.py",
+      "outcome": "migrate",
+      "status": "in-progress",
+      "next_action": "documents table; no screen yet"
+    },
+    {
+      "capability": "scope items",
+      "source": "app/routers/incidents.py",
+      "outcome": "migrate",
+      "status": "in-progress",
+      "next_action": "scope_items table; no screen yet"
+    },
+    {
+      "capability": "auto runs (recon/fix/validate pipeline, stubs)",
+      "source": "app/routers/auto.py",
+      "outcome": "migrate",
+      "status": "in-progress",
+      "next_action": "auto_runs table; pipeline stages remain stubs (AI agent not attached in source)"
+    },
+    {
+      "capability": "audit log (append-only)",
+      "source": "app/security.py audit(), app/db.py",
+      "outcome": "migrate",
+      "status": "in-progress",
+      "next_action": "audit_events table; team audit tab wired"
+    },
+    {
+      "capability": "realtime comms (WS /ws/comms/{channel})",
+      "source": "app/main.py, app/realtime.py",
+      "outcome": "migrate",
+      "status": "pending",
+      "next_action": "Replace with Supabase Realtime channels in a follow-up"
+    },
+    {
+      "capability": "records",
+      "source": "in-memory dicts only; no export exists",
+      "outcome": "not-applicable",
+      "status": "verified",
+      "next_action": "none — source had no persistent data"
+    },
+    {
+      "capability": "secrets",
+      "source": "JWT_SECRET, CORS_ORIGINS env vars",
+      "outcome": "not-applicable",
+      "status": "verified",
+      "next_action": "none — platform-specific, replaced by Lovable Cloud auth"
+    }
+  ]
+}
