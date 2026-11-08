@@ -18,6 +18,7 @@ import { SeverityBadge, Sparkline, StatusDot, statusDot } from "@/components/bre
 import { Button } from "@/components/ui/button";
 import { kpis, type ResponseStatus, type Severity } from "@/lib/breakout-data";
 import { commandCenterQuery } from "@/lib/breakout.functions";
+import type { Json } from "@/integrations/supabase/types";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/command-center")({
@@ -58,7 +59,7 @@ type AuditEvent = {
   id: number;
   actor_name: string | null;
   action: string;
-  detail: Record<string, unknown>;
+  detail: Json;
   created_at: string;
 };
 
@@ -70,7 +71,14 @@ const activityIcon = {
 };
 
 function describeEvent(e: AuditEvent): { kind: keyof typeof activityIcon; title: string; meta: string } {
-  const d = e.detail as { incident?: string; identities?: number; endpoints?: number; note?: string };
+  const d = (e.detail ?? {}) as {
+    incident?: string;
+    identities?: number;
+    endpoints?: number;
+    note?: string;
+    user_name?: string;
+    role?: string;
+  };
   const who = e.actor_name ?? "System";
   switch (e.action) {
     case "account.sessions_revoked":
