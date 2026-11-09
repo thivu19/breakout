@@ -1,4 +1,4 @@
-# Launch And Learn Hub
+# Breakout
 
 /skill:migrate-external-project Source: code archive. Migrate the attached project into Lovable.
 
